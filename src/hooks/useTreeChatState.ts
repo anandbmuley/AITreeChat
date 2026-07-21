@@ -266,7 +266,7 @@ export function useTreeChatState() {
 
   const openThread = (nodeId: string) => {
     const targetNode = nodes[nodeId];
-    if (targetNode && targetNode.role === 'assistant') {
+    if (targetNode) {
       setActiveThreadNodeId(nodeId);
     }
   };

@@ -126,6 +126,7 @@ export default function App() {
           onSendThread={sendThreadMessage}
           onCloseThread={closeThread}
           onInspectPath={inspectNodePath}
+          onOpenThread={openThread}
         />
       )}
 

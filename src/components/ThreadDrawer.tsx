@@ -26,6 +26,7 @@ interface ThreadDrawerProps {
   onSendThread: (content: string) => Promise<void>;
   onCloseThread: () => void;
   onInspectPath: (nodeId: string) => void;
+  onOpenThread?: (nodeId: string) => void;
 }
 
 export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
@@ -37,6 +38,7 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
   onSendThread,
   onCloseThread,
   onInspectPath,
+  onOpenThread,
 }) => {
   const [threadInputValue, setThreadInputValue] = useState('');
   const [showAncestors, setShowAncestors] = useState(true);
@@ -120,13 +122,13 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
             <React.Fragment key={node.id}>
               {index > 0 && <ChevronRight className="w-3 h-3 text-slate-600 flex-shrink-0" />}
               <button
-                onClick={() => onInspectPath(node.id)}
+                onClick={() => (onOpenThread ? onOpenThread(node.id) : onInspectPath(node.id))}
                 className={`truncate max-w-[130px] px-2 py-0.5 rounded transition text-left flex-shrink-0 ${
                   isAnchor
                     ? 'bg-indigo-950/80 border border-indigo-700/80 text-indigo-300 font-semibold'
                     : 'bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400'
                 }`}
-                title={`Level ${index} (${node.role}): ${node.content}`}
+                title={`Click to set Level ${index} (${node.role}) as active anchor`}
               >
                 <span className="font-mono text-[10px] opacity-75 mr-1">L{index}</span>
                 <span>{node.role === 'user' ? 'U' : 'AI'}: {node.content.slice(0, 14)}...</span>
@@ -212,11 +214,19 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
           <div className="bg-slate-900/90 border-2 border-indigo-600/80 rounded-2xl p-4 pt-5 shadow-lg shadow-indigo-950/40 relative">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-emerald-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  <Bot className="w-3.5 h-3.5" />
+                <span
+                  className={`w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm ${
+                    activeAnchorNode.role === 'user' ? 'bg-indigo-600' : 'bg-emerald-600'
+                  }`}
+                >
+                  {activeAnchorNode.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                 </span>
-                <span className="text-xs font-bold text-emerald-400">
-                  AI Assistant Response
+                <span
+                  className={`text-xs font-bold ${
+                    activeAnchorNode.role === 'user' ? 'text-indigo-300' : 'text-emerald-400'
+                  }`}
+                >
+                  {activeAnchorNode.role === 'user' ? 'User Prompt Anchor' : 'AI Assistant Response'}
                 </span>
                 {activeAnchorNode.metadata?.model && (
                   <span className="text-[10px] bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 px-2 py-0.5 rounded-full font-mono">
