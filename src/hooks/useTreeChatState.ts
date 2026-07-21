@@ -11,7 +11,8 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     childrenIds: ["node-2"],
     role: "user",
     content: "We are designing a modern microservices architecture for an e-commerce platform. What are 3 core patterns we should evaluate?",
-    timestamp: "10:00 AM"
+    timestamp: "10:00 AM",
+    metadata: { isMain: true }
   },
   "node-2": {
     id: "node-2",
@@ -20,7 +21,7 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     role: "assistant",
     content: "Here are 3 fundamental microservices design patterns to evaluate:\n\n1. **Event-Driven Architecture (EDA)** - Decouples services using message brokers like Kafka/RabbitMQ.\n2. **API Gateway Pattern** - Single entry point for routing, authentication, and rate limiting.\n3. **Database-per-Service** - Ensures loose coupling by isolating database instances per domain.",
     timestamp: "10:01 AM",
-    metadata: { model: "gemini-2.5-flash" }
+    metadata: { model: "gemini-2.5-flash", isMain: true }
   },
   "node-3": {
     id: "node-3",
@@ -77,7 +78,27 @@ export function useTreeChatState() {
     return path;
   }, [nodes]);
 
-  // Extract descendant sub-tree for a thread parent node
+  // Helper to retrieve the linear main line path nodes
+  const getMainLineNodes = useCallback((): ChatNode[] => {
+    const mainNodes: ChatNode[] = [];
+    if (rootIds.length === 0) return mainNodes;
+
+    let currentId: string | null = rootIds.find(id => nodes[id]?.metadata?.isMain) || rootIds[0] || null;
+
+    while (currentId && nodes[currentId]) {
+      const currentNode: ChatNode = nodes[currentId];
+      mainNodes.push(currentNode);
+
+      const mainChildId: string | undefined = currentNode.childrenIds.find(
+        childId => nodes[childId]?.metadata?.isMain
+      );
+      currentId = mainChildId || null;
+    }
+
+    return mainNodes;
+  }, [nodes, rootIds]);
+
+  // Extract descendant sub-tree for a thread parent node (excluding main line continuations)
   const getThreadDescendants = useCallback((parentNodeId: string): ChatNode[] => {
     const thread: ChatNode[] = [];
 
@@ -87,7 +108,7 @@ export function useTreeChatState() {
 
       currNode.childrenIds.forEach(childId => {
         const child: ChatNode | undefined = nodes[childId];
-        if (child) {
+        if (child && !child.metadata?.isMain) {
           thread.push(child);
           collectPath(child.id);
         }
@@ -98,7 +119,7 @@ export function useTreeChatState() {
     if (parentNode) {
       parentNode.childrenIds.forEach(childId => {
         const child: ChatNode | undefined = nodes[childId];
-        if (child) {
+        if (child && !child.metadata?.isMain) {
           thread.push(child);
           collectPath(child.id);
         }
@@ -108,46 +129,55 @@ export function useTreeChatState() {
     return thread;
   }, [nodes]);
 
-  // Count total reply count in sub-tree
+  // Count total thread reply count in sub-tree
   const getReplyCount = useCallback((nodeId: string): number => {
-    let count = 0;
-    const countChildren = (id: string): void => {
-      const nodeToCount: ChatNode | undefined = nodes[id];
-      if (nodeToCount && nodeToCount.childrenIds) {
-        count += nodeToCount.childrenIds.length;
-        nodeToCount.childrenIds.forEach(countChildren);
-      }
-    };
-    countChildren(nodeId);
-    return count;
-  }, [nodes]);
+    return getThreadDescendants(nodeId).length;
+  }, [getThreadDescendants]);
 
   // Get leaf nodes (nodes with 0 children) for synthesis
   const getLeafNodes = useCallback((): ChatNode[] => {
     return Object.values(nodes).filter(node => node.childrenIds.length === 0);
   }, [nodes]);
 
-  // Send Main Stream Message (Level 0)
+  // Send Main Stream Message (Chains to linear main line)
   const sendMainMessage = async (content: string) => {
     if (!content.trim() || isLoading) return;
+
+    const mainNodes = getMainLineNodes();
+    const lastMainNode = mainNodes.length > 0 ? mainNodes[mainNodes.length - 1] : null;
+    const parentId = lastMainNode ? lastMainNode.id : null;
 
     const userNodeId = `node-${Date.now()}`;
     const userNode: ChatNode = {
       id: userNodeId,
-      parentId: null,
+      parentId: parentId,
       childrenIds: [],
       role: 'user',
       content: content.trim(),
-      timestamp: getTimestamp()
+      timestamp: getTimestamp(),
+      metadata: { isMain: true }
     };
 
-    setNodes(prev => ({ ...prev, [userNodeId]: userNode }));
-    setRootIds(prev => [...prev, userNodeId]);
+    setNodes(prev => {
+      const next = { ...prev, [userNodeId]: userNode };
+      if (parentId && prev[parentId]) {
+        next[parentId] = {
+          ...prev[parentId],
+          childrenIds: [...(prev[parentId].childrenIds || []), userNodeId]
+        };
+      }
+      return next;
+    });
+
+    if (!parentId) {
+      setRootIds(prev => [...prev, userNodeId]);
+    }
+
     setIsLoading(true);
     setApiError(null);
 
     try {
-      const historyPath = [userNode];
+      const historyPath = parentId ? [...getPathToRoot(parentId), userNode] : [userNode];
       const aiResponseContent = await callGeminiAPI(historyPath, selectedModel, apiKey);
 
       const aiNodeId = `node-${Date.now() + 1}`;
@@ -158,7 +188,7 @@ export function useTreeChatState() {
         role: 'assistant',
         content: aiResponseContent,
         timestamp: getTimestamp(),
-        metadata: { model: selectedModel }
+        metadata: { model: selectedModel, isMain: true }
       };
 
       setNodes(prev => ({
@@ -294,6 +324,7 @@ export function useTreeChatState() {
     inspectedNodeId,
     searchQuery,
     getPathToRoot,
+    getMainLineNodes,
     getThreadDescendants,
     getReplyCount,
     getLeafNodes,
@@ -312,3 +343,4 @@ export function useTreeChatState() {
     startNewSession
   };
 }
+

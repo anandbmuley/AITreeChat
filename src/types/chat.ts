@@ -5,6 +5,7 @@ export interface NodeMetadata {
   tokens?: number;
   forkTitle?: string;
   archived?: boolean;
+  isMain?: boolean;
 }
 
 export interface ChatNode {

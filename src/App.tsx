@@ -22,6 +22,7 @@ export default function App() {
     inspectedNodeId,
     searchQuery,
     getPathToRoot,
+    getMainLineNodes,
     getThreadDescendants,
     getReplyCount,
     sendMainMessage,
@@ -95,6 +96,7 @@ export default function App() {
             activeThreadId={activeThreadNodeId}
             isLoading={isLoading}
             searchQuery={searchQuery}
+            getMainLineNodes={getMainLineNodes}
             onSendMain={sendMainMessage}
             onOpenThread={openThread}
             onInspectPath={inspectNodePath}
