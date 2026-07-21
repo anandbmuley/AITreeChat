@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AlertTriangle, X } from 'lucide-react';
 import { useTreeChatState } from './hooks/useTreeChatState';
 import { Sidebar } from './components/Sidebar';
 import { MainFeed } from './components/MainFeed';
@@ -16,10 +17,14 @@ export default function App() {
     selectedModel,
     apiKey,
     isLoading,
+    apiError,
+    setApiError,
     inspectedNodeId,
     searchQuery,
     getPathToRoot,
+    getMainLineNodes,
     getThreadDescendants,
+    getBranchesForNode,
     getReplyCount,
     sendMainMessage,
     sendThreadMessage,
@@ -33,6 +38,7 @@ export default function App() {
     exportGraph,
     importGraph,
     resetGraph,
+    startNewSession,
   } = useTreeChatState();
 
   const [showSynthesisModal, setShowSynthesisModal] = useState(false);
@@ -60,10 +66,30 @@ export default function App() {
         onExportGraph={exportGraph}
         onImportGraph={importGraph}
         onResetGraph={resetGraph}
+        onNewSession={startNewSession}
       />
 
       {/* Main Container Area: Feed Stream vs Visual DAG Map */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        {apiError && (
+          <div className="bg-red-950/90 border-b border-red-800 text-red-200 px-5 py-3 text-xs flex items-center justify-between z-30 shadow-lg animate-fade-in">
+            <div className="flex items-center gap-3 pr-4">
+              <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <div>
+                <span className="font-bold text-red-300">Gemini API Error Alert: </span>
+                <span className="text-red-100">{apiError}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setApiError(null)}
+              className="p-1 text-red-400 hover:text-red-100 hover:bg-red-900/60 rounded-lg transition"
+              title="Dismiss alert"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {activeViewMode === 'feed' ? (
           <MainFeed
             rootIds={rootIds}
@@ -71,6 +97,7 @@ export default function App() {
             activeThreadId={activeThreadNodeId}
             isLoading={isLoading}
             searchQuery={searchQuery}
+            getMainLineNodes={getMainLineNodes}
             onSendMain={sendMainMessage}
             onOpenThread={openThread}
             onInspectPath={inspectNodePath}
@@ -97,9 +124,11 @@ export default function App() {
           isLoading={isLoading}
           getPathToRoot={getPathToRoot}
           getThreadDescendants={getThreadDescendants}
+          getBranchesForNode={getBranchesForNode}
           onSendThread={sendThreadMessage}
           onCloseThread={closeThread}
           onInspectPath={inspectNodePath}
+          onOpenThread={openThread}
         />
       )}
 

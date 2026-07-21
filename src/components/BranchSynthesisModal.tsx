@@ -38,9 +38,11 @@ export const BranchSynthesisModal: React.FC<BranchSynthesisModalProps> = ({
     try {
       const result = await synthesizeBranches(pathA, pathB, selectedModel, apiKey);
       setSynthesisResult(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Synthesis failed", err);
-      setSynthesisResult("Failed to synthesize branches. Please try again.");
+      const errMsg = err?.message || "Failed to synthesize branches. Please try again.";
+      setSynthesisResult(`**Gemini API Error:** ${errMsg}`);
+      alert(`Gemini API Error:\n\n${errMsg}`);
     } finally {
       setIsSynthesizing(false);
     }

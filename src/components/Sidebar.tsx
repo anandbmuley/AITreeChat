@@ -12,7 +12,8 @@ import {
   Network, 
   Cpu, 
   Merge,
-  Search
+  Search,
+  Plus
 } from 'lucide-react';
 import { ViewMode } from '../types/chat';
 import { AVAILABLE_MODELS } from '../services/geminiApi';
@@ -33,6 +34,7 @@ interface SidebarProps {
   onExportGraph: () => void;
   onImportGraph: (jsonString: string) => boolean;
   onResetGraph: () => void;
+  onNewSession: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -51,6 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onExportGraph,
   onImportGraph,
   onResetGraph,
+  onNewSession,
 }) => {
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [importError, setImportError] = useState(false);
@@ -71,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className="w-72 bg-slate-950 border-r border-slate-800 flex flex-col justify-between p-4 hidden md:flex select-none">
-      <div className="space-y-6">
+      <div className="space-y-5">
         
         {/* Brand Header */}
         <div className="flex items-center gap-3 px-2">
@@ -83,6 +86,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <p className="text-[11px] text-slate-400 font-medium">Branching Dialogue System</p>
           </div>
         </div>
+
+        {/* Primary CTA: New Chat Session Button */}
+        <button
+          onClick={onNewSession}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/25 transition hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+          title="Create a new conversation session"
+        >
+          <Plus className="w-4 h-4" />
+          <span>New Chat</span>
+        </button>
 
         {/* View Mode Navigation Switcher */}
         <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-900/90 border border-slate-800 rounded-xl text-xs">

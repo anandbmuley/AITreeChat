@@ -21,6 +21,7 @@ interface MainFeedProps {
   activeThreadId: string | null;
   isLoading: boolean;
   searchQuery: string;
+  getMainLineNodes: () => ChatNode[];
   onSendMain: (content: string) => Promise<void>;
   onOpenThread: (nodeId: string) => void;
   onInspectPath: (nodeId: string) => void;
@@ -33,6 +34,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   activeThreadId,
   isLoading,
   searchQuery,
+  getMainLineNodes,
   onSendMain,
   onOpenThread,
   onInspectPath,
@@ -41,12 +43,14 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   const [inputValue, setInputValue] = useState('');
   const mainScrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when root messages update
+  const mainLineNodes = getMainLineNodes();
+
+  // Auto-scroll to bottom when main line messages update
   useEffect(() => {
     if (mainScrollRef.current) {
       mainScrollRef.current.scrollTop = mainScrollRef.current.scrollHeight;
     }
-  }, [rootIds, nodes]);
+  }, [mainLineNodes.length, nodes]);
 
   const handleSend = () => {
     if (inputValue.trim() && !isLoading) {
@@ -68,17 +72,25 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     "What are best practices for high-throughput Rate Limiting?"
   ];
 
-  // Filter root ids if search query exists
-  const filteredRootIds = rootIds.filter(rootId => {
+  // Group linear main line nodes into User/AI pairs
+  const mainPairs: { userNode: ChatNode; aiNode?: ChatNode }[] = [];
+  for (let i = 0; i < mainLineNodes.length; i++) {
+    const node = mainLineNodes[i];
+    if (node.role === 'user') {
+      const nextNode = mainLineNodes[i + 1];
+      const aiNode = nextNode && nextNode.role === 'assistant' ? nextNode : undefined;
+      mainPairs.push({ userNode: node, aiNode });
+      if (aiNode) i++;
+    }
+  }
+
+  // Filter pairs if search query exists
+  const filteredPairs = mainPairs.filter(({ userNode, aiNode }) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
-    const rootNode = nodes[rootId];
-    if (!rootNode) return false;
-    if (rootNode.content.toLowerCase().includes(query)) return true;
-    return rootNode.childrenIds.some(childId => {
-      const child = nodes[childId];
-      return child && child.content.toLowerCase().includes(query);
-    });
+    if (userNode.content.toLowerCase().includes(query)) return true;
+    if (aiNode && aiNode.content.toLowerCase().includes(query)) return true;
+    return false;
   });
 
   return (
@@ -94,7 +106,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
             <h2 className="font-semibold text-slate-200 text-sm flex items-center gap-2">
               Main Channel Stream
             </h2>
-            <p className="text-[11px] text-slate-400">Level-0 Core Timeline</p>
+            <p className="text-[11px] text-slate-400">Linear History Timeline</p>
           </div>
         </div>
 
@@ -108,23 +120,18 @@ export const MainFeed: React.FC<MainFeedProps> = ({
 
       {/* Main Timeline Chat Stream */}
       <div ref={mainScrollRef} className="flex-1 overflow-y-auto p-6 space-y-8">
-        {filteredRootIds.length === 0 ? (
+        {filteredPairs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center text-slate-500">
             <Layers className="w-12 h-12 mb-3 text-indigo-400/40" />
-            <p className="text-sm font-medium text-slate-300">No matching root conversations found</p>
-            <p className="text-xs text-slate-500 mt-1">Start a top-level prompt below to initialize a new conversation tree.</p>
+            <p className="text-sm font-medium text-slate-300">No matching conversations found</p>
+            <p className="text-xs text-slate-500 mt-1">Start a message below to initialize your linear conversation stream.</p>
           </div>
         ) : (
-          filteredRootIds.map((rootId) => {
-            const userNode = nodes[rootId];
-            if (!userNode) return null;
-
-            const childResponses = userNode.childrenIds.map(id => nodes[id]).filter(Boolean);
-
+          filteredPairs.map(({ userNode, aiNode }) => {
             return (
               <div key={userNode.id} className="space-y-4 max-w-4xl mx-auto animate-fade-in">
                 
-                {/* User Prompt Root Card */}
+                {/* User Prompt Card */}
                 <div className="flex items-start gap-3.5 group">
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-indigo-500/20 flex-shrink-0">
                     <User className="w-4 h-4" />
@@ -157,8 +164,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   </div>
                 </div>
 
-                {/* Assistant Primary Response Cards */}
-                {childResponses.map((aiNode) => {
+                {/* Assistant Primary Response Card */}
+                {aiNode && (() => {
                   const replyCount = getReplyCount(aiNode.id);
                   const isCurrentThread = activeThreadId === aiNode.id;
 
@@ -213,7 +220,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                       </div>
                     </div>
                   );
-                })}
+                })()}
 
               </div>
             );
@@ -233,7 +240,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
         <div className="max-w-4xl mx-auto space-y-3">
           
           {/* Quick Prompt Suggestions */}
-          {rootIds.length <= 1 && (
+          {mainLineNodes.length === 0 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 text-[11px]">
               <span className="text-slate-400 flex items-center gap-1 flex-shrink-0">
                 <Sparkles className="w-3 h-3 text-amber-400" /> Try prompt:
@@ -256,21 +263,21 @@ export const MainFeed: React.FC<MainFeedProps> = ({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Start a new top-level conversation stream... (Press Enter to submit)"
+              placeholder="Send message in main conversation stream... (Press Enter to submit)"
               className="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-500 rounded-2xl py-3 pl-4 pr-14 text-sm text-slate-100 placeholder-slate-500 outline-none resize-none transition shadow-inner"
             />
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isLoading}
               className="absolute right-3 p-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white rounded-xl transition shadow-md shadow-indigo-600/30"
-              title="Send top-level message"
+              title="Send main stream message"
             >
               <Send className="w-4 h-4" />
             </button>
           </div>
 
           <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
-            <span>Creates Level-0 Root Node in graph</span>
+            <span>Chains to main linear stream & sends full root path context</span>
             <span>Shift + Enter for new line</span>
           </div>
 
@@ -280,3 +287,4 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     </div>
   );
 };
+

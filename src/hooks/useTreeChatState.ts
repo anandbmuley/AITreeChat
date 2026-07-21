@@ -11,7 +11,8 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     childrenIds: ["node-2"],
     role: "user",
     content: "We are designing a modern microservices architecture for an e-commerce platform. What are 3 core patterns we should evaluate?",
-    timestamp: "10:00 AM"
+    timestamp: "10:00 AM",
+    metadata: { isMain: true }
   },
   "node-2": {
     id: "node-2",
@@ -20,7 +21,7 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     role: "assistant",
     content: "Here are 3 fundamental microservices design patterns to evaluate:\n\n1. **Event-Driven Architecture (EDA)** - Decouples services using message brokers like Kafka/RabbitMQ.\n2. **API Gateway Pattern** - Single entry point for routing, authentication, and rate limiting.\n3. **Database-per-Service** - Ensures loose coupling by isolating database instances per domain.",
     timestamp: "10:01 AM",
-    metadata: { model: "gemini-2.5-flash-preview-09-2025" }
+    metadata: { model: "gemini-2.5-flash", isMain: true }
   },
   "node-3": {
     id: "node-3",
@@ -37,7 +38,7 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     role: "assistant",
     content: "To guarantee idempotency in Event-Driven systems:\n\n* **Unique Message IDs:** Tag every published event with a UUID.\n* **Idempotency Key Database:** Consumers store processed message IDs in a transactional cache (e.g. Redis).\n* **Outbox Pattern:** Atomically write database updates and event logs within the same transaction.",
     timestamp: "10:06 AM",
-    metadata: { model: "gemini-2.5-flash-preview-09-2025" }
+    metadata: { model: "gemini-2.5-flash" }
   },
   "node-5": {
     id: "node-5",
@@ -59,6 +60,7 @@ export function useTreeChatState() {
   const [selectedModel, setSelectedModel] = useState<string>(AVAILABLE_MODELS[0].id);
   const [apiKey, setApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [inspectedNodeId, setInspectedNodeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -76,7 +78,27 @@ export function useTreeChatState() {
     return path;
   }, [nodes]);
 
-  // Extract descendant sub-tree for a thread parent node
+  // Helper to retrieve the linear main line path nodes
+  const getMainLineNodes = useCallback((): ChatNode[] => {
+    const mainNodes: ChatNode[] = [];
+    if (rootIds.length === 0) return mainNodes;
+
+    let currentId: string | null = rootIds.find(id => nodes[id]?.metadata?.isMain) || rootIds[0] || null;
+
+    while (currentId && nodes[currentId]) {
+      const currentNode: ChatNode = nodes[currentId];
+      mainNodes.push(currentNode);
+
+      const mainChildId: string | undefined = currentNode.childrenIds.find(
+        childId => nodes[childId]?.metadata?.isMain
+      );
+      currentId = mainChildId || null;
+    }
+
+    return mainNodes;
+  }, [nodes, rootIds]);
+
+  // Extract descendant sub-tree for a thread parent node (excluding main line continuations)
   const getThreadDescendants = useCallback((parentNodeId: string): ChatNode[] => {
     const thread: ChatNode[] = [];
 
@@ -86,7 +108,7 @@ export function useTreeChatState() {
 
       currNode.childrenIds.forEach(childId => {
         const child: ChatNode | undefined = nodes[childId];
-        if (child) {
+        if (child && !child.metadata?.isMain) {
           thread.push(child);
           collectPath(child.id);
         }
@@ -97,7 +119,7 @@ export function useTreeChatState() {
     if (parentNode) {
       parentNode.childrenIds.forEach(childId => {
         const child: ChatNode | undefined = nodes[childId];
-        if (child) {
+        if (child && !child.metadata?.isMain) {
           thread.push(child);
           collectPath(child.id);
         }
@@ -107,18 +129,46 @@ export function useTreeChatState() {
     return thread;
   }, [nodes]);
 
-  // Count total reply count in sub-tree
+  // Count total thread reply count in sub-tree
   const getReplyCount = useCallback((nodeId: string): number => {
-    let count = 0;
-    const countChildren = (id: string): void => {
-      const nodeToCount: ChatNode | undefined = nodes[id];
-      if (nodeToCount && nodeToCount.childrenIds) {
-        count += nodeToCount.childrenIds.length;
-        nodeToCount.childrenIds.forEach(countChildren);
+    return getThreadDescendants(nodeId).length;
+  }, [getThreadDescendants]);
+
+  // Extract distinct branch sub-trees originating directly from a parent node
+  const getBranchesForNode = useCallback((parentNodeId: string): { branchId: string; rootNode: ChatNode; nodes: ChatNode[] }[] => {
+    const parentNode = nodes[parentNodeId];
+    if (!parentNode) return [];
+
+    const directChildIds = parentNode.childrenIds.filter(childId => !nodes[childId]?.metadata?.isMain);
+
+    return directChildIds.map((childId, index) => {
+      const rootNode = nodes[childId];
+      const branchNodes: ChatNode[] = [];
+
+      if (rootNode) {
+        branchNodes.push(rootNode);
+
+        const collectSubTree = (currId: string) => {
+          const curr = nodes[currId];
+          if (!curr) return;
+          curr.childrenIds.forEach(cId => {
+            const child = nodes[cId];
+            if (child && !child.metadata?.isMain) {
+              branchNodes.push(child);
+              collectSubTree(child.id);
+            }
+          });
+        };
+
+        collectSubTree(childId);
       }
-    };
-    countChildren(nodeId);
-    return count;
+
+      return {
+        branchId: `branch-${index + 1}`,
+        rootNode,
+        nodes: branchNodes
+      };
+    });
   }, [nodes]);
 
   // Get leaf nodes (nodes with 0 children) for synthesis
@@ -126,26 +176,45 @@ export function useTreeChatState() {
     return Object.values(nodes).filter(node => node.childrenIds.length === 0);
   }, [nodes]);
 
-  // Send Main Stream Message (Level 0)
+  // Send Main Stream Message (Chains to linear main line)
   const sendMainMessage = async (content: string) => {
     if (!content.trim() || isLoading) return;
+
+    const mainNodes = getMainLineNodes();
+    const lastMainNode = mainNodes.length > 0 ? mainNodes[mainNodes.length - 1] : null;
+    const parentId = lastMainNode ? lastMainNode.id : null;
 
     const userNodeId = `node-${Date.now()}`;
     const userNode: ChatNode = {
       id: userNodeId,
-      parentId: null,
+      parentId: parentId,
       childrenIds: [],
       role: 'user',
       content: content.trim(),
-      timestamp: getTimestamp()
+      timestamp: getTimestamp(),
+      metadata: { isMain: true }
     };
 
-    setNodes(prev => ({ ...prev, [userNodeId]: userNode }));
-    setRootIds(prev => [...prev, userNodeId]);
+    setNodes(prev => {
+      const next = { ...prev, [userNodeId]: userNode };
+      if (parentId && prev[parentId]) {
+        next[parentId] = {
+          ...prev[parentId],
+          childrenIds: [...(prev[parentId].childrenIds || []), userNodeId]
+        };
+      }
+      return next;
+    });
+
+    if (!parentId) {
+      setRootIds(prev => [...prev, userNodeId]);
+    }
+
     setIsLoading(true);
+    setApiError(null);
 
     try {
-      const historyPath = [userNode];
+      const historyPath = parentId ? [...getPathToRoot(parentId), userNode] : [userNode];
       const aiResponseContent = await callGeminiAPI(historyPath, selectedModel, apiKey);
 
       const aiNodeId = `node-${Date.now() + 1}`;
@@ -156,7 +225,7 @@ export function useTreeChatState() {
         role: 'assistant',
         content: aiResponseContent,
         timestamp: getTimestamp(),
-        metadata: { model: selectedModel }
+        metadata: { model: selectedModel, isMain: true }
       };
 
       setNodes(prev => ({
@@ -164,8 +233,11 @@ export function useTreeChatState() {
         [userNodeId]: { ...prev[userNodeId], childrenIds: [aiNodeId] },
         [aiNodeId]: aiNode
       }));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate main response:", error);
+      const errMsg = error?.message || "An error occurred while communicating with Gemini API.";
+      setApiError(errMsg);
+      alert(`Gemini API Error:\n\n${errMsg}`);
     } finally {
       setIsLoading(false);
     }
@@ -197,6 +269,7 @@ export function useTreeChatState() {
     });
 
     setIsLoading(true);
+    setApiError(null);
 
     try {
       const fullHistoryPath = [...parentPath, userNode];
@@ -218,14 +291,22 @@ export function useTreeChatState() {
         [userNodeId]: { ...prev[userNodeId], childrenIds: [aiNodeId] },
         [aiNodeId]: aiNode
       }));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate thread response:", error);
+      const errMsg = error?.message || "An error occurred while communicating with Gemini API.";
+      setApiError(errMsg);
+      alert(`Gemini API Error:\n\n${errMsg}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const openThread = (nodeId: string) => setActiveThreadNodeId(nodeId);
+  const openThread = (nodeId: string) => {
+    const targetNode = nodes[nodeId];
+    if (targetNode) {
+      setActiveThreadNodeId(nodeId);
+    }
+  };
   const closeThread = () => setActiveThreadNodeId(null);
   const inspectNodePath = (nodeId: string | null) => setInspectedNodeId(nodeId);
 
@@ -260,7 +341,17 @@ export function useTreeChatState() {
     setRootIds(INITIAL_ROOT_IDS);
     setActiveThreadNodeId(null);
     setInspectedNodeId(null);
+    setApiError(null);
   };
+
+  const startNewSession = useCallback(() => {
+    setNodes({});
+    setRootIds([]);
+    setActiveThreadNodeId(null);
+    setInspectedNodeId(null);
+    setSearchQuery('');
+    setApiError(null);
+  }, []);
 
   return {
     nodes,
@@ -270,10 +361,14 @@ export function useTreeChatState() {
     selectedModel,
     apiKey,
     isLoading,
+    apiError,
+    setApiError,
     inspectedNodeId,
     searchQuery,
     getPathToRoot,
+    getMainLineNodes,
     getThreadDescendants,
+    getBranchesForNode,
     getReplyCount,
     getLeafNodes,
     sendMainMessage,
@@ -287,6 +382,8 @@ export function useTreeChatState() {
     setSearchQuery,
     exportGraph,
     importGraph,
-    resetGraph
+    resetGraph,
+    startNewSession
   };
 }
+

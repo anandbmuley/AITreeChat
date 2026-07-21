@@ -2,7 +2,7 @@ import { ChatNode, ModelOption } from '../types/chat';
 
 export const AVAILABLE_MODELS: ModelOption[] = [
   {
-    id: 'gemini-2.5-flash-preview-09-2025',
+    id: 'gemini-2.5-flash',
     name: 'Gemini 2.5 Flash',
     description: 'High-speed, intelligent model optimized for tree context traversal',
     badge: 'Fast & Smart'
@@ -23,7 +23,7 @@ export const AVAILABLE_MODELS: ModelOption[] = [
 
 export async function callGeminiAPI(
   historyPath: ChatNode[],
-  selectedModel: string = 'gemini-2.5-flash-preview-09-2025',
+  selectedModel: string = 'gemini-2.5-flash',
   customApiKey?: string
 ): Promise<string> {
   const apiKey = customApiKey || import.meta.env.VITE_GEMINI_API_KEY || '';
@@ -49,7 +49,9 @@ export async function callGeminiAPI(
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
     let delay = 1000;
-    for (let attempt = 0; attempt < 5; attempt++) {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -61,16 +63,48 @@ export async function callGeminiAPI(
           const data = await response.json();
           const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (generatedText) return generatedText;
+          throw new Error("No text content returned from Gemini API response.");
+        } else {
+          // Parse standard Gemini API error format
+          let apiErrorMessage = `API Request failed with HTTP ${response.status}: ${response.statusText}`;
+          try {
+            const errJson = await response.json();
+            if (errJson?.error?.message) {
+              apiErrorMessage = errJson.error.message;
+            }
+          } catch (_) {
+            // Ignore JSON parsing failure
+          }
+
+          const error = new Error(apiErrorMessage);
+
+          // Non-retriable HTTP client errors (4xx excluding 429 rate limits) should throw immediately
+          if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+            throw error;
+          }
+          lastError = error;
         }
-      } catch (err) {
-        console.warn(`[Gemini API] Attempt ${attempt + 1} failed. Retrying in ${delay}ms...`, err);
+      } catch (err: any) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        // Throw immediately if it's a known non-retriable client error
+        if (
+          attempt === 2 ||
+          lastError.message.includes('is not found') ||
+          lastError.message.includes('API key') ||
+          lastError.message.includes('is not supported')
+        ) {
+          throw lastError;
+        }
+        console.warn(`[Gemini API] Attempt ${attempt + 1} failed: ${lastError.message}. Retrying in ${delay}ms...`);
       }
       await new Promise(resolve => setTimeout(resolve, delay));
       delay *= 2;
     }
+
+    throw lastError || new Error("Failed to communicate with Gemini API.");
   }
 
-  // Simulation mode fallback generator when API key is unconfigured or call fails
+  // Simulation mode fallback generator when API key is unconfigured
   const lastUserPrompt = historyPath[historyPath.length - 1]?.content || 'Unknown prompt';
   return generateSimulationResponse(lastUserPrompt, historyPath.length);
 }
@@ -78,7 +112,7 @@ export async function callGeminiAPI(
 export async function synthesizeBranches(
   pathA: ChatNode[],
   pathB: ChatNode[],
-  selectedModel: string = 'gemini-2.5-flash-preview-09-2025',
+  selectedModel: string = 'gemini-2.5-flash',
   customApiKey?: string
 ): Promise<string> {
   const prompt = `Synthesize and compare the following two conversation branches:

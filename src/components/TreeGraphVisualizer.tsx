@@ -42,15 +42,17 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
         <div
           onMouseEnter={() => setHoveredNodeId(node.id)}
           onMouseLeave={() => setHoveredNodeId(null)}
-          className={`p-4 rounded-2xl border transition-all duration-200 shadow-md ${
+          onClick={() => onOpenThread(node.id)}
+          className={`p-4 rounded-2xl border transition-all duration-200 shadow-md cursor-pointer group/card ${
             isSelectedThread
-              ? 'bg-indigo-950/90 border-indigo-500 glow-indigo'
+              ? 'bg-indigo-950/90 border-indigo-500 ring-2 ring-indigo-500/50 shadow-indigo-950/80'
               : isHighlighted
               ? 'bg-slate-800 border-indigo-400'
               : isHovered
-              ? 'bg-slate-800/90 border-slate-600'
-              : 'bg-slate-900/90 border-slate-800'
+              ? 'bg-slate-800/90 border-indigo-500/60 shadow-lg'
+              : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
           }`}
+          title="Click to view hierarchy in Thread Panel"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -67,32 +69,49 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
               <span className="text-[10px] text-slate-400 font-mono bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
                 Depth {level}
               </span>
+              {isSelectedThread && (
+                <span className="text-[10px] bg-indigo-900/90 border border-indigo-500/80 text-indigo-200 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                  Active in Thread
+                </span>
+              )}
             </div>
 
             <span className="text-[11px] text-slate-400 font-mono">{node.timestamp}</span>
           </div>
 
-          <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed mb-3 font-sans">
+          <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed mb-3 font-sans group-hover/card:text-slate-100">
             {node.content}
           </p>
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px]">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => onOpenThread(node.id)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition font-medium ${
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenThread(node.id);
+                }}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition font-medium text-[11px] ${
                   isSelectedThread
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-800 hover:bg-slate-700 text-indigo-300'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700/60'
                 }`}
               >
                 <GitFork className="w-3 h-3" />
-                <span>{replyCount > 0 ? `${replyCount} Replies` : 'Fork Branch'}</span>
+                <span>
+                  {isSelectedThread
+                    ? 'Hierarchy Active'
+                    : replyCount > 0
+                    ? `${replyCount} ${replyCount === 1 ? 'Reply' : 'Replies'}`
+                    : 'View Hierarchy'}
+                </span>
               </button>
 
               <button
-                onClick={() => onInspectPath(node.id)}
-                className="text-slate-400 hover:text-slate-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-800"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInspectPath(node.id);
+                }}
+                className="text-slate-400 hover:text-slate-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-800 transition"
               >
                 <Terminal className="w-3 h-3" />
                 <span>Path Trace</span>
@@ -146,19 +165,27 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
       {/* Graph Tree Container */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {rootIds.map(rootId => (
-            <div key={rootId} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="text-xs font-bold text-indigo-400 tracking-wider uppercase flex items-center gap-2">
-                  <GitFork className="w-4 h-4" /> Level-0 Tree Root ({rootId})
-                </span>
-                <span className="text-xs text-slate-400 font-mono">
-                  Sub-tree Nodes: {getReplyCount(rootId) + 1}
-                </span>
-              </div>
-              {renderTreeNode(rootId, 0)}
+          {rootIds.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-center text-slate-500">
+              <Network className="w-12 h-12 mb-3 text-indigo-400/40" />
+              <p className="text-sm font-medium text-slate-300">Graph map is empty</p>
+              <p className="text-xs text-slate-500 mt-1">Start a conversation in the Feed View to build a new graph visualizer.</p>
             </div>
-          ))}
+          ) : (
+            rootIds.map(rootId => (
+              <div key={rootId} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <span className="text-xs font-bold text-indigo-400 tracking-wider uppercase flex items-center gap-2">
+                    <GitFork className="w-4 h-4" /> Level-0 Tree Root ({rootId})
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    Sub-tree Nodes: {getReplyCount(rootId) + 1}
+                  </span>
+                </div>
+                {renderTreeNode(rootId, 0)}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
