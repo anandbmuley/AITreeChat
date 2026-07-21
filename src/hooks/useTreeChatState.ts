@@ -20,7 +20,7 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     role: "assistant",
     content: "Here are 3 fundamental microservices design patterns to evaluate:\n\n1. **Event-Driven Architecture (EDA)** - Decouples services using message brokers like Kafka/RabbitMQ.\n2. **API Gateway Pattern** - Single entry point for routing, authentication, and rate limiting.\n3. **Database-per-Service** - Ensures loose coupling by isolating database instances per domain.",
     timestamp: "10:01 AM",
-    metadata: { model: "gemini-2.5-flash-preview-09-2025" }
+    metadata: { model: "gemini-2.5-flash" }
   },
   "node-3": {
     id: "node-3",
@@ -37,7 +37,7 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     role: "assistant",
     content: "To guarantee idempotency in Event-Driven systems:\n\n* **Unique Message IDs:** Tag every published event with a UUID.\n* **Idempotency Key Database:** Consumers store processed message IDs in a transactional cache (e.g. Redis).\n* **Outbox Pattern:** Atomically write database updates and event logs within the same transaction.",
     timestamp: "10:06 AM",
-    metadata: { model: "gemini-2.5-flash-preview-09-2025" }
+    metadata: { model: "gemini-2.5-flash" }
   },
   "node-5": {
     id: "node-5",
@@ -59,6 +59,7 @@ export function useTreeChatState() {
   const [selectedModel, setSelectedModel] = useState<string>(AVAILABLE_MODELS[0].id);
   const [apiKey, setApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [inspectedNodeId, setInspectedNodeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -143,6 +144,7 @@ export function useTreeChatState() {
     setNodes(prev => ({ ...prev, [userNodeId]: userNode }));
     setRootIds(prev => [...prev, userNodeId]);
     setIsLoading(true);
+    setApiError(null);
 
     try {
       const historyPath = [userNode];
@@ -164,8 +166,11 @@ export function useTreeChatState() {
         [userNodeId]: { ...prev[userNodeId], childrenIds: [aiNodeId] },
         [aiNodeId]: aiNode
       }));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate main response:", error);
+      const errMsg = error?.message || "An error occurred while communicating with Gemini API.";
+      setApiError(errMsg);
+      alert(`Gemini API Error:\n\n${errMsg}`);
     } finally {
       setIsLoading(false);
     }
@@ -197,6 +202,7 @@ export function useTreeChatState() {
     });
 
     setIsLoading(true);
+    setApiError(null);
 
     try {
       const fullHistoryPath = [...parentPath, userNode];
@@ -218,8 +224,11 @@ export function useTreeChatState() {
         [userNodeId]: { ...prev[userNodeId], childrenIds: [aiNodeId] },
         [aiNodeId]: aiNode
       }));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate thread response:", error);
+      const errMsg = error?.message || "An error occurred while communicating with Gemini API.";
+      setApiError(errMsg);
+      alert(`Gemini API Error:\n\n${errMsg}`);
     } finally {
       setIsLoading(false);
     }
@@ -260,6 +269,7 @@ export function useTreeChatState() {
     setRootIds(INITIAL_ROOT_IDS);
     setActiveThreadNodeId(null);
     setInspectedNodeId(null);
+    setApiError(null);
   };
 
   const startNewSession = useCallback(() => {
@@ -268,6 +278,7 @@ export function useTreeChatState() {
     setActiveThreadNodeId(null);
     setInspectedNodeId(null);
     setSearchQuery('');
+    setApiError(null);
   }, []);
 
   return {
@@ -278,6 +289,8 @@ export function useTreeChatState() {
     selectedModel,
     apiKey,
     isLoading,
+    apiError,
+    setApiError,
     inspectedNodeId,
     searchQuery,
     getPathToRoot,
