@@ -146,19 +146,27 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
       {/* Graph Tree Container */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {rootIds.map(rootId => (
-            <div key={rootId} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="text-xs font-bold text-indigo-400 tracking-wider uppercase flex items-center gap-2">
-                  <GitFork className="w-4 h-4" /> Level-0 Tree Root ({rootId})
-                </span>
-                <span className="text-xs text-slate-400 font-mono">
-                  Sub-tree Nodes: {getReplyCount(rootId) + 1}
-                </span>
-              </div>
-              {renderTreeNode(rootId, 0)}
+          {rootIds.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-center text-slate-500">
+              <Network className="w-12 h-12 mb-3 text-indigo-400/40" />
+              <p className="text-sm font-medium text-slate-300">Graph map is empty</p>
+              <p className="text-xs text-slate-500 mt-1">Start a conversation in the Feed View to build a new graph visualizer.</p>
             </div>
-          ))}
+          ) : (
+            rootIds.map(rootId => (
+              <div key={rootId} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <span className="text-xs font-bold text-indigo-400 tracking-wider uppercase flex items-center gap-2">
+                    <GitFork className="w-4 h-4" /> Level-0 Tree Root ({rootId})
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    Sub-tree Nodes: {getReplyCount(rootId) + 1}
+                  </span>
+                </div>
+                {renderTreeNode(rootId, 0)}
+              </div>
+            ))
+          )}
         </div>
       </div>
 

@@ -33,6 +33,7 @@ export default function App() {
     exportGraph,
     importGraph,
     resetGraph,
+    startNewSession,
   } = useTreeChatState();
 
   const [showSynthesisModal, setShowSynthesisModal] = useState(false);
@@ -60,6 +61,7 @@ export default function App() {
         onExportGraph={exportGraph}
         onImportGraph={importGraph}
         onResetGraph={resetGraph}
+        onNewSession={startNewSession}
       />
 
       {/* Main Container Area: Feed Stream vs Visual DAG Map */}

@@ -262,6 +262,14 @@ export function useTreeChatState() {
     setInspectedNodeId(null);
   };
 
+  const startNewSession = useCallback(() => {
+    setNodes({});
+    setRootIds([]);
+    setActiveThreadNodeId(null);
+    setInspectedNodeId(null);
+    setSearchQuery('');
+  }, []);
+
   return {
     nodes,
     rootIds,
@@ -287,6 +295,7 @@ export function useTreeChatState() {
     setSearchQuery,
     exportGraph,
     importGraph,
-    resetGraph
+    resetGraph,
+    startNewSession
   };
 }
