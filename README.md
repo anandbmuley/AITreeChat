@@ -4,6 +4,16 @@
 
 ---
 
+## 🖼️ User Interface Preview
+
+### Main Feed & Thread Drawer
+![Main Feed View](images/AI%20Tree%20Chat%20Feed%20View.png)
+
+### Interactive Tree Graph Visualizer
+![Interactive Tree Graph View](images/AI%20Tree%20Chat%20Graph%20View.png)
+
+---
+
 ## 📌 Executive Summary & Motivation
 
 Traditional Large Language Model (LLM) chat interfaces (such as ChatGPT or Claude) treat user interactions as a **strict linear sequence of messages**. While linear feeds work well for simple Q&A, they fail significantly when users engage in complex problem-solving, architectural design, debugging, or creative brainstorming.
