@@ -134,6 +134,43 @@ export function useTreeChatState() {
     return getThreadDescendants(nodeId).length;
   }, [getThreadDescendants]);
 
+  // Extract distinct branch sub-trees originating directly from a parent node
+  const getBranchesForNode = useCallback((parentNodeId: string): { branchId: string; rootNode: ChatNode; nodes: ChatNode[] }[] => {
+    const parentNode = nodes[parentNodeId];
+    if (!parentNode) return [];
+
+    const directChildIds = parentNode.childrenIds.filter(childId => !nodes[childId]?.metadata?.isMain);
+
+    return directChildIds.map((childId, index) => {
+      const rootNode = nodes[childId];
+      const branchNodes: ChatNode[] = [];
+
+      if (rootNode) {
+        branchNodes.push(rootNode);
+
+        const collectSubTree = (currId: string) => {
+          const curr = nodes[currId];
+          if (!curr) return;
+          curr.childrenIds.forEach(cId => {
+            const child = nodes[cId];
+            if (child && !child.metadata?.isMain) {
+              branchNodes.push(child);
+              collectSubTree(child.id);
+            }
+          });
+        };
+
+        collectSubTree(childId);
+      }
+
+      return {
+        branchId: `branch-${index + 1}`,
+        rootNode,
+        nodes: branchNodes
+      };
+    });
+  }, [nodes]);
+
   // Get leaf nodes (nodes with 0 children) for synthesis
   const getLeafNodes = useCallback((): ChatNode[] => {
     return Object.values(nodes).filter(node => node.childrenIds.length === 0);
@@ -331,6 +368,7 @@ export function useTreeChatState() {
     getPathToRoot,
     getMainLineNodes,
     getThreadDescendants,
+    getBranchesForNode,
     getReplyCount,
     getLeafNodes,
     sendMainMessage,

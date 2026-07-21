@@ -23,6 +23,7 @@ interface ThreadDrawerProps {
   isLoading: boolean;
   getPathToRoot: (nodeId: string) => ChatNode[];
   getThreadDescendants: (nodeId: string) => ChatNode[];
+  getBranchesForNode: (nodeId: string) => { branchId: string; rootNode: ChatNode; nodes: ChatNode[] }[];
   onSendThread: (content: string) => Promise<void>;
   onCloseThread: () => void;
   onInspectPath: (nodeId: string) => void;
@@ -35,6 +36,7 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
   isLoading,
   getPathToRoot,
   getThreadDescendants,
+  getBranchesForNode,
   onSendThread,
   onCloseThread,
   onInspectPath,
@@ -42,12 +44,14 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
 }) => {
   const [threadInputValue, setThreadInputValue] = useState('');
   const [showAncestors, setShowAncestors] = useState(true);
+  const [activeBranchFilter, setActiveBranchFilter] = useState<string>('all');
   const threadScrollRef = useRef<HTMLDivElement>(null);
 
   const activeAnchorNode = nodes[activeThreadId];
   const activeThreadPath = getPathToRoot(activeThreadId);
   const ancestorNodes = activeThreadPath.slice(0, activeThreadPath.length - 1);
   const activeThreadMessages = getThreadDescendants(activeThreadId);
+  const directBranches = getBranchesForNode(activeThreadId);
 
   // Auto scroll thread view on updates
   useEffect(() => {
@@ -252,19 +256,127 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
         <div className="flex items-center gap-2 my-4 text-[11px] text-slate-400">
           <div className="flex-1 h-px bg-slate-800" />
           <span className="flex items-center gap-1.5 font-semibold text-slate-300 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
-            <CornerDownRight className="w-3.5 h-3.5 text-indigo-400" /> Branch Continuations ({activeThreadMessages.length})
+            <CornerDownRight className="w-3.5 h-3.5 text-indigo-400" />
+            {directBranches.length > 1
+              ? `${directBranches.length} Parallel Forks Sprouted`
+              : `Branch Continuations (${activeThreadMessages.length})`}
           </span>
           <div className="flex-1 h-px bg-slate-800" />
         </div>
 
-        {/* Section 4: Nested Thread Messages */}
-        {activeThreadMessages.length === 0 ? (
+        {/* Section 4: Multi-Branch Grouped vs Single Branch View */}
+        {directBranches.length === 0 ? (
           <div className="text-center py-8 text-slate-500 text-xs space-y-2 bg-slate-900/30 border border-slate-800/50 rounded-2xl p-4">
             <GitFork className="w-8 h-8 mx-auto opacity-30 text-indigo-400" />
             <p className="font-medium text-slate-400">No replies in this branch yet.</p>
             <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
               Submitting a message below will create a new branch response attached to this anchor while preserving full ancestor history context.
             </p>
+          </div>
+        ) : directBranches.length > 1 ? (
+          <div className="space-y-4">
+            {/* Multi-Fork Filter Tabs */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 space-y-2">
+              <div className="flex items-center justify-between text-[11px] px-1 font-semibold text-slate-300">
+                <span className="flex items-center gap-1.5 text-indigo-300">
+                  <GitFork className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Select Parallel Fork to View / Extend:</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">{directBranches.length} Forks</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                <button
+                  onClick={() => setActiveBranchFilter('all')}
+                  className={`px-3 py-1 rounded-xl text-xs font-semibold transition flex-shrink-0 ${
+                    activeBranchFilter === 'all'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+                  }`}
+                >
+                  All Forks ({directBranches.length})
+                </button>
+                {directBranches.map((b, idx) => (
+                  <button
+                    key={b.branchId}
+                    onClick={() => setActiveBranchFilter(b.branchId)}
+                    className={`px-3 py-1 rounded-xl text-xs font-semibold transition flex-shrink-0 flex items-center gap-1.5 ${
+                      activeBranchFilter === b.branchId
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                        : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+                    }`}
+                  >
+                    <span>Fork #{idx + 1}:</span>
+                    <span className="truncate max-w-[100px] font-normal">{b.rootNode.content.slice(0, 16)}...</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Individual Fork Container Cards */}
+            {(activeBranchFilter === 'all'
+              ? directBranches
+              : directBranches.filter(b => b.branchId === activeBranchFilter)
+            ).map((b) => {
+              const actualBranchIndex = directBranches.findIndex(item => item.branchId === b.branchId);
+              const latestNodeInFork = b.nodes[b.nodes.length - 1];
+
+              return (
+                <div
+                  key={b.branchId}
+                  className="bg-slate-900/80 border-2 border-indigo-900/70 hover:border-indigo-700/90 rounded-2xl p-4 space-y-3.5 shadow-xl relative animate-fade-in"
+                >
+                  {/* Fork Card Header */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-indigo-950 border border-indigo-700/80 text-indigo-300 text-[11px] font-bold px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
+                        <GitFork className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Fork #{actualBranchIndex + 1}</span>
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {b.nodes.length} {b.nodes.length === 1 ? 'Node' : 'Nodes'}
+                      </span>
+                    </div>
+
+                    {onOpenThread && (
+                      <button
+                        onClick={() => onOpenThread(latestNodeInFork.id)}
+                        className="text-xs bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 px-3 py-1 rounded-xl transition font-medium border border-indigo-800 flex items-center gap-1 shadow-sm"
+                        title="Focus and extend this specific branch thread"
+                      >
+                        <span>Focus / Extend</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-indigo-400" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Fork Messages Stream */}
+                  <div className="space-y-3 pl-1">
+                    {b.nodes.map((msg) => (
+                      <div key={msg.id} className="flex items-start gap-2.5">
+                        <div
+                          className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm ${
+                            msg.role === 'user' ? 'bg-indigo-600' : 'bg-emerald-600'
+                          }`}
+                        >
+                          {msg.role === 'user' ? 'U' : <Bot className="w-3 h-3" />}
+                        </div>
+
+                        <div className="flex-1 bg-slate-950/90 border border-slate-800 rounded-xl p-3 text-xs space-y-1 hover:border-slate-700 transition">
+                          <div className="flex items-center justify-between text-[10px] text-slate-400">
+                            <span className={`font-semibold ${msg.role === 'user' ? 'text-indigo-300' : 'text-emerald-400'}`}>
+                              {msg.role === 'user' ? 'Fork Prompt' : 'AI Branch Response'}
+                            </span>
+                            <span className="font-mono">{msg.timestamp}</span>
+                          </div>
+                          <MarkdownRenderer content={msg.content} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           activeThreadMessages.map((msg) => (

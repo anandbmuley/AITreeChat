@@ -24,6 +24,7 @@ export default function App() {
     getPathToRoot,
     getMainLineNodes,
     getThreadDescendants,
+    getBranchesForNode,
     getReplyCount,
     sendMainMessage,
     sendThreadMessage,
@@ -123,6 +124,7 @@ export default function App() {
           isLoading={isLoading}
           getPathToRoot={getPathToRoot}
           getThreadDescendants={getThreadDescendants}
+          getBranchesForNode={getBranchesForNode}
           onSendThread={sendThreadMessage}
           onCloseThread={closeThread}
           onInspectPath={inspectNodePath}
