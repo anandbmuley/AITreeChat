@@ -78,17 +78,19 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px]">
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => onOpenThread(node.id)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition font-medium ${
-                  isSelectedThread
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-800 hover:bg-slate-700 text-indigo-300'
-                }`}
-              >
-                <GitFork className="w-3 h-3" />
-                <span>{replyCount > 0 ? `${replyCount} Replies` : 'Fork Branch'}</span>
-              </button>
+              {node.role === 'assistant' && (
+                <button
+                  onClick={() => onOpenThread(node.id)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition font-medium ${
+                    isSelectedThread
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-800 hover:bg-slate-700 text-indigo-300'
+                  }`}
+                >
+                  <GitFork className="w-3 h-3" />
+                  <span>{replyCount > 0 ? `${replyCount} Replies` : 'Fork Branch'}</span>
+                </button>
+              )}
 
               <button
                 onClick={() => onInspectPath(node.id)}

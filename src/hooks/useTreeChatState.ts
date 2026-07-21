@@ -264,7 +264,12 @@ export function useTreeChatState() {
     }
   };
 
-  const openThread = (nodeId: string) => setActiveThreadNodeId(nodeId);
+  const openThread = (nodeId: string) => {
+    const targetNode = nodes[nodeId];
+    if (targetNode && targetNode.role === 'assistant') {
+      setActiveThreadNodeId(nodeId);
+    }
+  };
   const closeThread = () => setActiveThreadNodeId(null);
   const inspectNodePath = (nodeId: string | null) => setInspectedNodeId(nodeId);
 
