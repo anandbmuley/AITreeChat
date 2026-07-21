@@ -121,11 +121,16 @@ interface ConversationGraph {
 
 ---
 
-### 3. Slack-Style Dual-Pane UX
+### 3. Slack-Style Dual-Pane UX & Features
 
-* **Main Channel Feed (Level-0 Stream)**: Displays high-level prompts and root-level assistant responses. Keeps the primary narrative clean and high-level.
-* **Right Thread Drawer (Active Sub-Branch)**: Opens when clicking "Reply in Thread" on any message card. Houses isolated sub-tree conversations and side explorations without cluttering the main feed.
-* **Path Context Inspector Modal**: A visual debugging utility built directly into the UI that allows users to inspect the raw context payload assembled by `getPathToRoot` before dispatching to the LLM API.
+* **Main Channel Feed (Level-0 Stream)**: Displays high-level prompts and root-level assistant responses. Keeps the primary narrative clean and linear.
+* **Right Thread Drawer (Active Sub-Branch)**: Opens when clicking "Reply in Thread" on any AI response card. Displays the complete ancestor hierarchy along with isolated sub-tree conversations and side explorations without cluttering the main feed.
+* **Parallel Fork Tab Management**: When multiple thread branches are spawned off the same AI message, they are organized into distinct selectable cards and tabs inside the Thread Drawer.
+* **AI-Restricted Thread Forking**: Branching and thread creation are strictly tied to AI assistant responses, maintaining structured prompt-response mechanics.
+* **Interactive Tree Graph Visualizer**: A visual DAG graph view (`TreeGraphVisualizer`) displaying conversation topology, branch depths, and node lineage. Clicking any node instantly opens its branch in the Thread Drawer.
+* **Branch Convergence & Synthesis Modal**: Built-in branch comparison engine (`BranchSynthesisModal`) allowing users to pick two leaf nodes from separate sub-trees and synthesize their collective context into a unified report.
+* **Path Context Inspector Modal**: A visual debugging utility that allows users to inspect the exact context payload assembled by `getPathToRoot` before dispatching to the LLM API.
+* **Session Management & Graph I/O**: Supports creating new sessions ("New Chat"), exporting conversation DAGs as JSON files, and importing saved graphs.
 
 ---
 
@@ -206,6 +211,6 @@ for (let attempt = 0; attempt < maxRetries; attempt++) {
 
 ## 🔮 Future Roadmap & Enhancements
 
-1. **Branch Convergence (Synthesis)**: Ability to pick two separate leaf nodes from parallel sub-trees and pass both paths into a synthesis prompt to generate a consolidated comparison summary.
-2. **Branch Pruning & Archiving**: Archiving or collapsing low-yield branches to maintain mental clarity during extensive research sessions.
-3. **Interactive Tree Minimap**: An interactive visual graph view (Canvas / SVG / React Flow) in the corner of the UI allowing users to visualize full conversation trees and jump instantly to deep nodes.
+1. **Branch Pruning & Archiving**: Ability to archive, collapse, or soft-delete low-yield branches to optimize visual space during deep research sessions.
+2. **Multi-Model Parallel Evaluation**: Pass the same thread context to multiple LLM providers (e.g., Gemini vs Claude vs OpenAI) simultaneously in parallel sub-threads to compare model performance.
+3. **Local Storage & Cloud Sync Persistence**: Automatic IndexedDB/SQLite local persistence and cloud sync for cross-device session continuation.
