@@ -1,4 +1,4 @@
-# AITreeChat: Slack-Style Branching Chat Engine
+# AITreeChat: Multi-Branching LLM Chat Engine
 
 > **A Directed Acyclic Graph (DAG) dialogue system designed for multi-branching LLM conversations without context poisoning.**
 
@@ -18,7 +18,7 @@
 
 Traditional Large Language Model (LLM) chat interfaces (such as ChatGPT or Claude) treat user interactions as a **strict linear sequence of messages**. While linear feeds work well for simple Q&A, they fail significantly when users engage in complex problem-solving, architectural design, debugging, or creative brainstorming.
 
-**AITreeChat** reimagines LLM conversations by modeling them as a **Directed Acyclic Graph (DAG)** or **Tree Structure**, while preserving a clean, familiar **Slack-style Threaded UX**.
+**AITreeChat** reimagines LLM conversations by modeling them as a **Directed Acyclic Graph (DAG)** or **Tree Structure**, while preserving a clean, intuitive **Threaded Side-Drawer UX**.
 
 ```
                            [Root User Prompt]
@@ -121,7 +121,7 @@ interface ConversationGraph {
 
 ---
 
-### 3. Slack-Style Dual-Pane UX & Features
+### 3. Threaded Dual-Pane UX & Features
 
 * **Main Channel Feed (Level-0 Stream)**: Displays high-level prompts and root-level assistant responses. Keeps the primary narrative clean and linear.
 * **Right Thread Drawer (Active Sub-Branch)**: Opens when clicking "Reply in Thread" on any AI response card. Displays the complete ancestor hierarchy along with isolated sub-tree conversations and side explorations without cluttering the main feed.
@@ -174,10 +174,10 @@ for (let attempt = 0; attempt < maxRetries; attempt++) {
 
 ---
 
-## 📂 Key Project Resources
+## 📂 Key Project Architecture & Source Code
 
-* **[temp/slack_style_branching_chat_app.tsx](file:///Users/monika/Projects/AI/AITreeChat/temp/slack_style_branching_chat_app.tsx)**: Reference standalone React implementation of the Slack-style thread graph UI, state traversal engine, context inspector, and Gemini integration.
-* **[temp/Technical Architecture & System Design Plan.pdf](file:///Users/monika/Projects/AI/AITreeChat/temp/Technical%20Architecture%20%26%20System%20Design%20Plan.pdf)**: Complete technical design specification document detailing state machines, graph data models, and UX interaction flows.
+* **[src/App.tsx](file:///Users/monika/Projects/AI/AITreeChat/src/App.tsx)**: Core application layout orchestrating the timeline feed, thread side-drawer, visual tree graph map, path inspector modal, and branch synthesis modal.
+* **[src/hooks/useTreeChatState.ts](file:///Users/monika/Projects/AI/AITreeChat/src/hooks/useTreeChatState.ts)**: Normalized graph state manager (`getPathToRoot`, `getBranchesForNode`, `sendMainMessage`, `sendThreadMessage`).
 
 ---
 
