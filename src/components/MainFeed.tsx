@@ -14,15 +14,11 @@ import {
   Cpu,
   Zap,
   Brain,
-  Info,
-  Sun,
-  Moon,
-  Laptop
+  Info
 } from 'lucide-react';
 import { ChatNode, TreeComplexityMetrics } from '../types/chat';
 import { AVAILABLE_MODELS } from '../services/geminiApi';
 import { MarkdownRenderer } from './MarkdownRenderer';
-import { ThemeMode } from '../hooks/useTheme';
 
 interface MainFeedProps {
   rootIds: string[];
@@ -38,8 +34,6 @@ interface MainFeedProps {
   onOpenThread: (nodeId: string) => void;
   onInspectPath: (nodeId: string) => void;
   getReplyCount: (nodeId: string) => number;
-  themeMode?: ThemeMode;
-  setThemeMode?: (mode: ThemeMode) => void;
 }
 
 export const MainFeed: React.FC<MainFeedProps> = ({
@@ -56,8 +50,6 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   onOpenThread,
   onInspectPath,
   getReplyCount,
-  themeMode,
-  setThemeMode,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [nodeModelOverride, setNodeModelOverride] = useState<string>(selectedModel);
@@ -122,13 +114,6 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     return false;
   });
 
-  const toggleTheme = () => {
-    if (!setThemeMode) return;
-    if (themeMode === 'system') setThemeMode('dark');
-    else if (themeMode === 'dark') setThemeMode('light');
-    else setThemeMode('system');
-  };
-
   return (
     <div className="flex-1 flex flex-col bg-slate-50 dark:bg-slate-900 min-w-0 h-full relative transition-colors duration-200">
       
@@ -146,32 +131,12 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {activeThreadId && (
-            <div className="text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 px-3 py-1 rounded-full animate-pulse">
-              <GitFork className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>Thread Active</span>
-            </div>
-          )}
-
-          {/* Prominent Header Theme Toggle Button */}
-          {setThemeMode && (
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-xs font-semibold shadow-sm transition"
-              title={`Current Theme: ${themeMode?.toUpperCase()}. Click to switch theme.`}
-            >
-              {themeMode === 'light' ? (
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
-              ) : themeMode === 'dark' ? (
-                <Moon className="w-3.5 h-3.5 text-indigo-400" />
-              ) : (
-                <Laptop className="w-3.5 h-3.5 text-indigo-500" />
-              )}
-              <span className="capitalize">{themeMode || 'Theme'}</span>
-            </button>
-          )}
-        </div>
+        {activeThreadId && (
+          <div className="text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 px-3 py-1 rounded-full animate-pulse">
+            <GitFork className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span>Thread Side Panel Active</span>
+          </div>
+        )}
       </div>
 
       {/* Main Timeline Chat Stream */}
