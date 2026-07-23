@@ -12,6 +12,9 @@
 ### Interactive Tree Graph Visualizer
 ![Interactive Tree Graph View](images/AI%20Tree%20Chat%20Graph%20View.png)
 
+### Tree Complexity & Model Recommendation
+![Tree Complexity Model Recommendation](images/TreeComplexityModelRecommendation.png)
+
 ---
 
 ## 📌 Executive Summary & Motivation
