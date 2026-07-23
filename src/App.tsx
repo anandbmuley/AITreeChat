@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useTreeChatState } from './hooks/useTreeChatState';
+import { useTheme } from './hooks/useTheme';
 import { Sidebar } from './components/Sidebar';
 import { MainFeed } from './components/MainFeed';
 import { ThreadDrawer } from './components/ThreadDrawer';
@@ -9,6 +10,8 @@ import { TreeGraphVisualizer } from './components/TreeGraphVisualizer';
 import { BranchSynthesisModal } from './components/BranchSynthesisModal';
 
 export default function App() {
+  const { themeMode, setThemeMode } = useTheme();
+
   const {
     nodes,
     rootIds,
@@ -48,10 +51,12 @@ export default function App() {
   const nodeCount = Object.keys(nodes).length;
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden transition-colors duration-200">
       
       {/* Left Navigation & Metrics Sidebar */}
       <Sidebar
+        themeMode={themeMode}
+        setThemeMode={setThemeMode}
         activeViewMode={activeViewMode}
         setActiveViewMode={setActiveViewMode}
         selectedModel={selectedModel}

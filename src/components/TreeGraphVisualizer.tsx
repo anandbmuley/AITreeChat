@@ -45,12 +45,12 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
           onClick={() => onOpenThread(node.id)}
           className={`p-4 rounded-2xl border transition-all duration-200 shadow-md cursor-pointer group/card ${
             isSelectedThread
-              ? 'bg-indigo-950/90 border-indigo-500 ring-2 ring-indigo-500/50 shadow-indigo-950/80'
+              ? 'bg-indigo-50 dark:bg-indigo-950/90 border-indigo-500 ring-2 ring-indigo-500/50 shadow-indigo-950/80'
               : isHighlighted
-              ? 'bg-slate-800 border-indigo-400'
+              ? 'bg-slate-100 dark:bg-slate-800 border-indigo-400'
               : isHovered
-              ? 'bg-slate-800/90 border-indigo-500/60 shadow-lg'
-              : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+              ? 'bg-slate-100/90 dark:bg-slate-800/90 border-indigo-400 dark:border-indigo-500/60 shadow-lg'
+              : 'bg-white dark:bg-slate-900/90 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
           }`}
           title="Click to view hierarchy in Thread Panel"
         >
@@ -63,10 +63,10 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
               >
                 {node.role === 'user' ? 'U' : <Bot className="w-3.5 h-3.5" />}
               </div>
-              <span className={`text-xs font-semibold ${node.role === 'user' ? 'text-indigo-300' : 'text-emerald-400'}`}>
+              <span className={`text-xs font-semibold ${node.role === 'user' ? 'text-indigo-600 dark:text-indigo-300' : 'text-emerald-600 dark:text-emerald-400'}`}>
                 {node.role === 'user' ? 'User' : 'AI Assistant'}
               </span>
-              <span className="text-[10px] text-slate-400 font-mono bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
                 Depth {level}
               </span>
               {node.role === 'assistant' && node.metadata?.model && (() => {
@@ -76,10 +76,10 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
                 return (
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center gap-1 border ${
                     isPro 
-                      ? 'bg-indigo-950/90 border-indigo-700/80 text-indigo-300' 
+                      ? 'bg-indigo-50 dark:bg-indigo-950/90 border-indigo-200 dark:border-indigo-700/80 text-indigo-700 dark:text-indigo-300' 
                       : is20 
-                      ? 'bg-cyan-950/90 border-cyan-700/80 text-cyan-300'
-                      : 'bg-emerald-950/90 border-emerald-700/80 text-emerald-300'
+                      ? 'bg-cyan-50 dark:bg-cyan-950/90 border-cyan-200 dark:border-cyan-700/80 text-cyan-700 dark:text-cyan-300'
+                      : 'bg-emerald-50 dark:bg-emerald-950/90 border-emerald-200 dark:border-emerald-700/80 text-emerald-700 dark:text-emerald-300'
                   }`}>
                     <Cpu className="w-3 h-3" />
                     {modelId.replace('gemini-', '')}
@@ -87,7 +87,7 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
                 );
               })()}
               {isSelectedThread && (
-                <span className="text-[10px] bg-indigo-900/90 border border-indigo-500/80 text-indigo-200 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/90 border border-indigo-500/80 text-indigo-700 dark:text-indigo-200 px-2 py-0.5 rounded-full font-semibold animate-pulse">
                   Active in Thread
                 </span>
               )}
@@ -96,11 +96,11 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
             <span className="text-[11px] text-slate-400 font-mono">{node.timestamp}</span>
           </div>
 
-          <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed mb-3 font-sans group-hover/card:text-slate-100">
+          <p className="text-xs text-slate-800 dark:text-slate-200 line-clamp-3 leading-relaxed mb-3 font-sans group-hover/card:text-slate-900 dark:group-hover/card:text-slate-100">
             {node.content}
           </p>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px]">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px]">
             <div className="flex items-center gap-2">
               <button
                 onClick={(e) => {
@@ -110,7 +110,7 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition font-medium text-[11px] ${
                   isSelectedThread
                     ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700/60'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 border border-slate-200 dark:border-slate-700/60'
                 }`}
               >
                 <GitFork className="w-3 h-3" />
@@ -128,7 +128,7 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
                   e.stopPropagation();
                   onInspectPath(node.id);
                 }}
-                className="text-slate-400 hover:text-slate-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-800 transition"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               >
                 <Terminal className="w-3 h-3" />
                 <span>Path Trace</span>
@@ -152,21 +152,21 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 h-full overflow-hidden">
+    <div className="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 h-full overflow-hidden transition-colors duration-200">
       
       {/* Visualizer Top Bar */}
-      <div className="h-14 border-b border-slate-800 px-6 flex items-center justify-between bg-slate-900/60 select-none">
+      <div className="h-14 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between bg-white/80 dark:bg-slate-900/60 select-none">
         <div className="flex items-center gap-3">
-          <div className="p-1.5 bg-indigo-950 border border-indigo-800 rounded-lg text-indigo-400">
+          <div className="p-1.5 bg-indigo-100 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-indigo-600 dark:text-indigo-400">
             <Network className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="font-semibold text-slate-200 text-sm">Interactive Visual DAG Graph Map</h2>
-            <p className="text-[11px] text-slate-400">Hierarchical Tree Structure & Node Connections</p>
+            <h2 className="font-semibold text-slate-900 dark:text-slate-200 text-sm">Interactive Visual DAG Graph Map</h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Hierarchical Tree Structure & Node Connections</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-slate-400">
+        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1 text-[11px]">
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" /> User Node
           </span>
@@ -174,7 +174,7 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> AI Node
           </span>
           <span className="flex items-center gap-1 text-[11px]">
-            <Sparkles className="w-3 h-3 text-amber-400" /> Hover node to highlight root context path
+            <Sparkles className="w-3 h-3 text-amber-500" /> Hover node to highlight root context path
           </span>
         </div>
       </div>
@@ -183,16 +183,16 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
       <div className="flex-1 overflow-y-auto p-8 space-y-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {rootIds.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-center text-slate-500">
+            <div className="flex flex-col items-center justify-center h-64 text-center text-slate-400 dark:text-slate-500">
               <Network className="w-12 h-12 mb-3 text-indigo-400/40" />
-              <p className="text-sm font-medium text-slate-300">Graph map is empty</p>
-              <p className="text-xs text-slate-500 mt-1">Start a conversation in the Feed View to build a new graph visualizer.</p>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Graph map is empty</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Start a conversation in the Feed View to build a new graph visualizer.</p>
             </div>
           ) : (
             rootIds.map(rootId => (
-              <div key={rootId} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <span className="text-xs font-bold text-indigo-400 tracking-wider uppercase flex items-center gap-2">
+              <div key={rootId} className="bg-white/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 tracking-wider uppercase flex items-center gap-2">
                     <GitFork className="w-4 h-4" /> Level-0 Tree Root ({rootId})
                   </span>
                   <span className="text-xs text-slate-400 font-mono">
