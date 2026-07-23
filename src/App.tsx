@@ -111,6 +111,8 @@ export default function App() {
             onOpenThread={openThread}
             onInspectPath={inspectNodePath}
             getReplyCount={getReplyCount}
+            themeMode={themeMode}
+            setThemeMode={setThemeMode}
           />
         ) : (
           <TreeGraphVisualizer
