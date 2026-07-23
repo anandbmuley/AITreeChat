@@ -58,6 +58,7 @@ In conventional UIs, editing an earlier message or re-generating a response trun
 | :--- | :--- | :--- |
 | **Data Model** | Linear Array (`Message[]`) | Directed Acyclic Graph (`Record<string, ChatNode>`) |
 | **Context Strategy** | Full window / sliding history | **Path Traversal (`Root → ... → Node`)** |
+| **Model Selection** | Global per session / single model | **Dynamic Node-Level Routing (Flash vs Pro)** |
 | **Tangential Explorations** | Pollutes main conversation | **Isolated in side-drawer threads** |
 | **Context Poisoning** | High risk across topics | **Zero contamination between branches** |
 | **History Preservation** | Destructive (edits overwrite history) | **Non-Destructive (forks anytime)** |
@@ -124,10 +125,31 @@ interface ConversationGraph {
 
 ---
 
-### 3. Threaded Dual-Pane UX & Features
+### 3. Dynamic Tree Complexity & Node-Level Model Routing
+Instead of sticking to a single model for an entire conversation, AITreeChat allows swapping models per prompt/node based on branch depth and payload complexity. Each node in the conversation hierarchy clearly displays the model used to generate it.
+
+#### 🧮 Dynamic Tree Hierarchy Complexity Algorithm
+A dynamic path score ($C$) is calculated in real time using context depth, token count, and parallel branch forks:
+
+$$C = (\text{Depth} \times 1.5) + \left(\frac{\text{Total Path Tokens}}{200}\right) + (\text{Parallel Branch Count} \times 2.0)$$
+
+Based on the calculated complexity score ($C$), AITreeChat automatically suggests the optimal model tier:
+
+| Complexity Tier | Score Range | Recommended Model | Best Suited For |
+| :--- | :--- | :--- | :--- |
+| 🟢 **Low Complexity** | $C < 8$ | **Gemini 2.0 Flash** | Quick Q&A, simple follow-up prompts, single-turn replies |
+| 🟡 **Medium Complexity** | $8 \le C \le 18$ | **Gemini 2.5 Flash** | Standard technical threads, moderate code analysis |
+| 🔴 **High Complexity** | $C > 18$ | **Gemini 1.5 Pro** | Deep ancestral paths ($6+$ nodes), complex multi-branch forks, intensive reasoning |
+
+> **Why Route Dynamically?** Basic follow-up questions don't require high-tier model costs. Dynamic node routing ensures token efficiency, lower latency, and full control over AI interactions.
+
+---
+
+### 4. Threaded Dual-Pane UX & Features
 
 * **Main Channel Feed (Level-0 Stream)**: Displays high-level prompts and root-level assistant responses. Keeps the primary narrative clean and linear.
 * **Right Thread Drawer (Active Sub-Branch)**: Opens when clicking "Reply in Thread" on any AI response card. Displays the complete ancestor hierarchy along with isolated sub-tree conversations and side explorations without cluttering the main feed.
+* **Per-Node Model Selection & Indicators**: Seamlessly pick or swap AI models per prompt, with visual badges indicating which model generated each message node.
 * **Parallel Fork Tab Management**: When multiple thread branches are spawned off the same AI message, they are organized into distinct selectable cards and tabs inside the Thread Drawer.
 * **AI-Restricted Thread Forking**: Branching and thread creation are strictly tied to AI assistant responses, maintaining structured prompt-response mechanics.
 * **Interactive Tree Graph Visualizer**: A visual DAG graph view (`TreeGraphVisualizer`) displaying conversation topology, branch depths, and node lineage. Clicking any node instantly opens its branch in the Thread Drawer.
@@ -137,7 +159,7 @@ interface ConversationGraph {
 
 ---
 
-### 4. API Resiliency & Exponential Backoff
+### 5. API Resiliency & Exponential Backoff
 Requests to external LLM providers (e.g., Google Gemini API) incorporate exponential backoff with retries to handle rate limits, transient network errors, or API throttling gracefully:
 
 ```typescript
