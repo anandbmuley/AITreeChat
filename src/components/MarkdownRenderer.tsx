@@ -65,13 +65,13 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
 
               // Headers
               if (paragraph.startsWith('### ')) {
-                return <h3 key={pIdx} className="text-sm font-bold text-slate-100 mt-2 mb-1">{paragraph.replace('### ', '')}</h3>;
+                return <h3 key={pIdx} className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-2 mb-1">{paragraph.replace('### ', '')}</h3>;
               }
               if (paragraph.startsWith('## ')) {
-                return <h2 key={pIdx} className="text-base font-bold text-slate-100 mt-2.5 mb-1">{paragraph.replace('## ', '')}</h2>;
+                return <h2 key={pIdx} className="text-base font-bold text-slate-900 dark:text-slate-100 mt-2.5 mb-1">{paragraph.replace('## ', '')}</h2>;
               }
               if (paragraph.startsWith('# ')) {
-                return <h1 key={pIdx} className="text-lg font-bold text-indigo-300 mt-3 mb-1.5">{paragraph.replace('# ', '')}</h1>;
+                return <h1 key={pIdx} className="text-lg font-bold text-indigo-600 dark:text-indigo-300 mt-3 mb-1.5">{paragraph.replace('# ', '')}</h1>;
               }
 
               // Lists
@@ -82,7 +82,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
                     {lines.map((line, lIdx) => {
                       const cleanLine = line.replace(/^(\*|\d+\.)\s*/, '');
                       return (
-                        <li key={lIdx} className="text-slate-300">
+                        <li key={lIdx} className="text-slate-700 dark:text-slate-300">
                           {renderInlineFormatted(cleanLine)}
                         </li>
                       );
@@ -92,7 +92,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
               }
 
               return (
-                <p key={pIdx} className="text-slate-300 whitespace-pre-wrap">
+                <p key={pIdx} className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
                   {renderInlineFormatted(paragraph)}
                 </p>
               );
@@ -109,10 +109,10 @@ function renderInlineFormatted(text: string) {
   const parts = text.split(/(\*\*[\s\S]*?\*\*|`[^`]+`)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-semibold text-indigo-200">{part.slice(2, -2)}</strong>;
+      return <strong key={i} className="font-semibold text-indigo-700 dark:text-indigo-200">{part.slice(2, -2)}</strong>;
     }
     if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="bg-slate-800 text-indigo-300 px-1.5 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>;
+      return <code key={i} className="bg-slate-200 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>;
     }
     return part;
   });

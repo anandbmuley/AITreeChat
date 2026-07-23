@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useTreeChatState } from './hooks/useTreeChatState';
+import { useTheme } from './hooks/useTheme';
 import { Sidebar } from './components/Sidebar';
 import { MainFeed } from './components/MainFeed';
 import { ThreadDrawer } from './components/ThreadDrawer';
@@ -9,6 +10,8 @@ import { TreeGraphVisualizer } from './components/TreeGraphVisualizer';
 import { BranchSynthesisModal } from './components/BranchSynthesisModal';
 
 export default function App() {
+  const { themeMode, setThemeMode } = useTheme();
+
   const {
     nodes,
     rootIds,
@@ -26,6 +29,7 @@ export default function App() {
     getThreadDescendants,
     getBranchesForNode,
     getReplyCount,
+    getComplexityForPath,
     sendMainMessage,
     sendThreadMessage,
     openThread,
@@ -47,10 +51,12 @@ export default function App() {
   const nodeCount = Object.keys(nodes).length;
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden transition-colors duration-200">
       
       {/* Left Navigation & Metrics Sidebar */}
       <Sidebar
+        themeMode={themeMode}
+        setThemeMode={setThemeMode}
         activeViewMode={activeViewMode}
         setActiveViewMode={setActiveViewMode}
         selectedModel={selectedModel}
@@ -97,7 +103,10 @@ export default function App() {
             activeThreadId={activeThreadNodeId}
             isLoading={isLoading}
             searchQuery={searchQuery}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
             getMainLineNodes={getMainLineNodes}
+            getComplexityForPath={getComplexityForPath}
             onSendMain={sendMainMessage}
             onOpenThread={openThread}
             onInspectPath={inspectNodePath}
@@ -122,9 +131,11 @@ export default function App() {
           activeThreadId={activeThreadNodeId}
           nodes={nodes}
           isLoading={isLoading}
+          selectedModel={selectedModel}
           getPathToRoot={getPathToRoot}
           getThreadDescendants={getThreadDescendants}
           getBranchesForNode={getBranchesForNode}
+          getComplexityForPath={getComplexityForPath}
           onSendThread={sendThreadMessage}
           onCloseThread={closeThread}
           onInspectPath={inspectNodePath}

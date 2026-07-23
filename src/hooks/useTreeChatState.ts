@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ChatNode, ViewMode } from '../types/chat';
-import { callGeminiAPI, AVAILABLE_MODELS } from '../services/geminiApi';
+import { callGeminiAPI, AVAILABLE_MODELS, calculatePathComplexity } from '../services/geminiApi';
 
 const getTimestamp = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -176,9 +176,18 @@ export function useTreeChatState() {
     return Object.values(nodes).filter(node => node.childrenIds.length === 0);
   }, [nodes]);
 
+  // Get Complexity Metrics for a target node or main line path
+  const getComplexityForPath = useCallback((targetNodeId: string | null = null) => {
+    const historyPath = targetNodeId ? getPathToRoot(targetNodeId) : getMainLineNodes();
+    const branchCount = targetNodeId ? getBranchesForNode(targetNodeId).length : 0;
+    return calculatePathComplexity(historyPath, branchCount);
+  }, [getPathToRoot, getMainLineNodes, getBranchesForNode]);
+
   // Send Main Stream Message (Chains to linear main line)
-  const sendMainMessage = async (content: string) => {
+  const sendMainMessage = async (content: string, modelOverride?: string) => {
     if (!content.trim() || isLoading) return;
+
+    const targetModel = modelOverride || selectedModel;
 
     const mainNodes = getMainLineNodes();
     const lastMainNode = mainNodes.length > 0 ? mainNodes[mainNodes.length - 1] : null;
@@ -215,7 +224,7 @@ export function useTreeChatState() {
 
     try {
       const historyPath = parentId ? [...getPathToRoot(parentId), userNode] : [userNode];
-      const aiResponseContent = await callGeminiAPI(historyPath, selectedModel, apiKey);
+      const aiResponseContent = await callGeminiAPI(historyPath, targetModel, apiKey);
 
       const aiNodeId = `node-${Date.now() + 1}`;
       const aiNode: ChatNode = {
@@ -225,7 +234,7 @@ export function useTreeChatState() {
         role: 'assistant',
         content: aiResponseContent,
         timestamp: getTimestamp(),
-        metadata: { model: selectedModel, isMain: true }
+        metadata: { model: targetModel, isMain: true }
       };
 
       setNodes(prev => ({
@@ -244,8 +253,10 @@ export function useTreeChatState() {
   };
 
   // Send Thread Message (Offloaded Fork)
-  const sendThreadMessage = async (content: string) => {
+  const sendThreadMessage = async (content: string, modelOverride?: string) => {
     if (!content.trim() || !activeThreadNodeId || isLoading) return;
+
+    const targetModel = modelOverride || selectedModel;
 
     const parentPath = getPathToRoot(activeThreadNodeId);
     const parentNode = parentPath[parentPath.length - 1];
@@ -273,7 +284,7 @@ export function useTreeChatState() {
 
     try {
       const fullHistoryPath = [...parentPath, userNode];
-      const aiResponseContent = await callGeminiAPI(fullHistoryPath, selectedModel, apiKey);
+      const aiResponseContent = await callGeminiAPI(fullHistoryPath, targetModel, apiKey);
 
       const aiNodeId = `node-${Date.now() + 1}`;
       const aiNode: ChatNode = {
@@ -283,7 +294,7 @@ export function useTreeChatState() {
         role: 'assistant',
         content: aiResponseContent,
         timestamp: getTimestamp(),
-        metadata: { model: selectedModel }
+        metadata: { model: targetModel }
       };
 
       setNodes(prev => ({
@@ -371,6 +382,7 @@ export function useTreeChatState() {
     getBranchesForNode,
     getReplyCount,
     getLeafNodes,
+    getComplexityForPath,
     sendMainMessage,
     sendThreadMessage,
     openThread,

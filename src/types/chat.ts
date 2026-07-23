@@ -26,11 +26,26 @@ export interface ConversationGraph {
 
 export type ViewMode = 'feed' | 'visualizer';
 
+export type ComplexityTier = 'low' | 'medium' | 'high';
+
+export interface TreeComplexityMetrics {
+  score: number;
+  tier: ComplexityTier;
+  recommendedModelId: string;
+  depth: number;
+  estimatedTokens: number;
+  branchCount: number;
+  reason: string;
+}
+
 export interface ModelOption {
   id: string;
   name: string;
   description: string;
   badge?: string;
+  tier: ComplexityTier;
+  speed: string;
+  reasoning: string;
 }
 
 export interface SynthesisRequest {
@@ -43,3 +58,4 @@ export interface PathInspectionData {
   pathNodes: ChatNode[];
   totalPayloadTokensEstimate: number;
 }
+
