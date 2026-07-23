@@ -26,6 +26,7 @@ export default function App() {
     getThreadDescendants,
     getBranchesForNode,
     getReplyCount,
+    getComplexityForPath,
     sendMainMessage,
     sendThreadMessage,
     openThread,
@@ -97,7 +98,10 @@ export default function App() {
             activeThreadId={activeThreadNodeId}
             isLoading={isLoading}
             searchQuery={searchQuery}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
             getMainLineNodes={getMainLineNodes}
+            getComplexityForPath={getComplexityForPath}
             onSendMain={sendMainMessage}
             onOpenThread={openThread}
             onInspectPath={inspectNodePath}
@@ -122,9 +126,11 @@ export default function App() {
           activeThreadId={activeThreadNodeId}
           nodes={nodes}
           isLoading={isLoading}
+          selectedModel={selectedModel}
           getPathToRoot={getPathToRoot}
           getThreadDescendants={getThreadDescendants}
           getBranchesForNode={getBranchesForNode}
+          getComplexityForPath={getComplexityForPath}
           onSendThread={sendThreadMessage}
           onCloseThread={closeThread}
           onInspectPath={inspectNodePath}

@@ -10,9 +10,14 @@ import {
   RefreshCw,
   Sparkles,
   Layers,
-  ArrowDown
+  ArrowDown,
+  Cpu,
+  Zap,
+  Brain,
+  Info
 } from 'lucide-react';
-import { ChatNode } from '../types/chat';
+import { ChatNode, TreeComplexityMetrics } from '../types/chat';
+import { AVAILABLE_MODELS } from '../services/geminiApi';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface MainFeedProps {
@@ -21,8 +26,11 @@ interface MainFeedProps {
   activeThreadId: string | null;
   isLoading: boolean;
   searchQuery: string;
+  selectedModel: string;
+  setSelectedModel: (modelId: string) => void;
   getMainLineNodes: () => ChatNode[];
-  onSendMain: (content: string) => Promise<void>;
+  getComplexityForPath: (nodeId: string | null) => TreeComplexityMetrics;
+  onSendMain: (content: string, modelOverride?: string) => Promise<void>;
   onOpenThread: (nodeId: string) => void;
   onInspectPath: (nodeId: string) => void;
   getReplyCount: (nodeId: string) => number;
@@ -34,16 +42,26 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   activeThreadId,
   isLoading,
   searchQuery,
+  selectedModel,
+  setSelectedModel,
   getMainLineNodes,
+  getComplexityForPath,
   onSendMain,
   onOpenThread,
   onInspectPath,
   getReplyCount,
 }) => {
   const [inputValue, setInputValue] = useState('');
+  const [nodeModelOverride, setNodeModelOverride] = useState<string>(selectedModel);
   const mainScrollRef = useRef<HTMLDivElement>(null);
 
+  // Sync default nodeModelOverride if global selectedModel changes
+  useEffect(() => {
+    setNodeModelOverride(selectedModel);
+  }, [selectedModel]);
+
   const mainLineNodes = getMainLineNodes();
+  const complexity = getComplexityForPath(null);
 
   // Auto-scroll to bottom when main line messages update
   useEffect(() => {
@@ -54,7 +72,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
 
   const handleSend = () => {
     if (inputValue.trim() && !isLoading) {
-      onSendMain(inputValue);
+      onSendMain(inputValue, nodeModelOverride);
       setInputValue('');
     }
   };
@@ -181,11 +199,23 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                             <span className="text-xs font-semibold text-emerald-400">
                               AI Assistant
                             </span>
-                            {aiNode.metadata?.model && (
-                              <span className="text-[10px] bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 px-2 py-0.5 rounded-full font-mono">
-                                {aiNode.metadata.model.replace('gemini-', '')}
-                              </span>
-                            )}
+                            {aiNode.metadata?.model && (() => {
+                              const modelId = aiNode.metadata.model;
+                              const isPro = modelId.includes('pro');
+                              const is20 = modelId.includes('2.0');
+                              return (
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center gap-1 border ${
+                                  isPro 
+                                    ? 'bg-indigo-950/90 border-indigo-700/80 text-indigo-300' 
+                                    : is20 
+                                    ? 'bg-cyan-950/90 border-cyan-700/80 text-cyan-300'
+                                    : 'bg-emerald-950/90 border-emerald-700/80 text-emerald-300'
+                                }`}>
+                                  <Cpu className="w-3 h-3" />
+                                  {modelId.replace('gemini-', '')}
+                                </span>
+                              );
+                            })()}
                           </div>
                           <span className="text-[11px] text-slate-400 font-mono">{aiNode.timestamp}</span>
                         </div>
@@ -239,6 +269,46 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       <div className="p-4 border-t border-slate-800 bg-slate-950/60 backdrop-blur">
         <div className="max-w-4xl mx-auto space-y-3">
           
+          {/* Node Model Selector & Hierarchy Complexity Recommendation Bar */}
+          <div className="flex items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2 text-xs">
+            {/* Complexity Indicator */}
+            <div className="flex items-center gap-2 text-slate-300 min-w-0">
+              <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wider flex-shrink-0 flex items-center gap-1 border ${
+                complexity.tier === 'low'
+                  ? 'bg-emerald-950/90 text-emerald-300 border-emerald-800/80'
+                  : complexity.tier === 'medium'
+                  ? 'bg-amber-950/90 text-amber-300 border-amber-800/80'
+                  : 'bg-indigo-950/90 text-indigo-300 border-indigo-800/80'
+              }`}>
+                {complexity.tier === 'low' ? <Zap className="w-3 h-3 text-emerald-400" /> :
+                 complexity.tier === 'medium' ? <Cpu className="w-3 h-3 text-amber-400" /> :
+                 <Brain className="w-3 h-3 text-indigo-400" />}
+                {complexity.tier} Complexity (Score: {complexity.score})
+              </span>
+              <span className="text-slate-400 text-[11px] truncate hidden sm:inline" title={complexity.reason}>
+                {complexity.reason}
+              </span>
+            </div>
+
+            {/* Model Selector dropdown */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-slate-400 text-[11px] font-medium hidden md:inline">
+                Model for this node:
+              </span>
+              <select
+                value={nodeModelOverride}
+                onChange={(e) => setNodeModelOverride(e.target.value)}
+                className="bg-slate-950 border border-slate-700/90 hover:border-indigo-500 text-xs text-indigo-200 rounded-lg px-2.5 py-1 outline-none font-semibold transition cursor-pointer shadow-sm"
+              >
+                {AVAILABLE_MODELS.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name} ({model.badge}){model.id === complexity.recommendedModelId ? ' ★ Recommended' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Quick Prompt Suggestions */}
           {mainLineNodes.length === 0 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 text-[11px]">
@@ -270,14 +340,14 @@ export const MainFeed: React.FC<MainFeedProps> = ({
               onClick={handleSend}
               disabled={!inputValue.trim() || isLoading}
               className="absolute right-3 p-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white rounded-xl transition shadow-md shadow-indigo-600/30"
-              title="Send main stream message"
+              title={`Send using ${AVAILABLE_MODELS.find(m => m.id === nodeModelOverride)?.name || nodeModelOverride}`}
             >
               <Send className="w-4 h-4" />
             </button>
           </div>
 
           <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
-            <span>Chains to main linear stream & sends full root path context</span>
+            <span>Will generate AI response using <strong>{AVAILABLE_MODELS.find(m => m.id === nodeModelOverride)?.name}</strong></span>
             <span>Shift + Enter for new line</span>
           </div>
 

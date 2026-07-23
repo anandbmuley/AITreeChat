@@ -12,19 +12,25 @@ import {
   RefreshCw,
   Info,
   Layers,
-  History
+  History,
+  Cpu,
+  Zap,
+  Brain
 } from 'lucide-react';
-import { ChatNode } from '../types/chat';
+import { ChatNode, TreeComplexityMetrics } from '../types/chat';
+import { AVAILABLE_MODELS } from '../services/geminiApi';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface ThreadDrawerProps {
   activeThreadId: string;
   nodes: Record<string, ChatNode>;
   isLoading: boolean;
+  selectedModel: string;
   getPathToRoot: (nodeId: string) => ChatNode[];
   getThreadDescendants: (nodeId: string) => ChatNode[];
   getBranchesForNode: (nodeId: string) => { branchId: string; rootNode: ChatNode; nodes: ChatNode[] }[];
-  onSendThread: (content: string) => Promise<void>;
+  getComplexityForPath: (nodeId: string | null) => TreeComplexityMetrics;
+  onSendThread: (content: string, modelOverride?: string) => Promise<void>;
   onCloseThread: () => void;
   onInspectPath: (nodeId: string) => void;
   onOpenThread?: (nodeId: string) => void;
@@ -34,24 +40,32 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
   activeThreadId,
   nodes,
   isLoading,
+  selectedModel,
   getPathToRoot,
   getThreadDescendants,
   getBranchesForNode,
+  getComplexityForPath,
   onSendThread,
   onCloseThread,
   onInspectPath,
   onOpenThread,
 }) => {
   const [threadInputValue, setThreadInputValue] = useState('');
+  const [threadModelOverride, setThreadModelOverride] = useState<string>(selectedModel);
   const [showAncestors, setShowAncestors] = useState(true);
   const [activeBranchFilter, setActiveBranchFilter] = useState<string>('all');
   const threadScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setThreadModelOverride(selectedModel);
+  }, [selectedModel]);
 
   const activeAnchorNode = nodes[activeThreadId];
   const activeThreadPath = getPathToRoot(activeThreadId);
   const ancestorNodes = activeThreadPath.slice(0, activeThreadPath.length - 1);
   const activeThreadMessages = getThreadDescendants(activeThreadId);
   const directBranches = getBranchesForNode(activeThreadId);
+  const complexity = getComplexityForPath(activeThreadId);
 
   // Auto scroll thread view on updates
   useEffect(() => {
@@ -62,7 +76,7 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
 
   const handleSend = () => {
     if (threadInputValue.trim() && !isLoading) {
-      onSendThread(threadInputValue);
+      onSendThread(threadInputValue, threadModelOverride);
       setThreadInputValue('');
     }
   };
@@ -364,9 +378,16 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
 
                         <div className="flex-1 bg-slate-950/90 border border-slate-800 rounded-xl p-3 text-xs space-y-1 hover:border-slate-700 transition">
                           <div className="flex items-center justify-between text-[10px] text-slate-400">
-                            <span className={`font-semibold ${msg.role === 'user' ? 'text-indigo-300' : 'text-emerald-400'}`}>
-                              {msg.role === 'user' ? 'Fork Prompt' : 'AI Branch Response'}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className={`font-semibold ${msg.role === 'user' ? 'text-indigo-300' : 'text-emerald-400'}`}>
+                                {msg.role === 'user' ? 'Fork Prompt' : 'AI Branch Response'}
+                              </span>
+                              {msg.metadata?.model && (
+                                <span className="text-[9px] bg-emerald-950/90 border border-emerald-800/60 text-emerald-300 px-1.5 py-0.2 rounded font-mono">
+                                  {msg.metadata.model.replace('gemini-', '')}
+                                </span>
+                              )}
+                            </div>
                             <span className="font-mono">{msg.timestamp}</span>
                           </div>
                           <MarkdownRenderer content={msg.content} />
@@ -397,9 +418,16 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className={`font-semibold ${msg.role === 'user' ? 'text-indigo-300' : 'text-emerald-400'}`}>
-                    {msg.role === 'user' ? 'User' : 'AI Assistant'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`font-semibold ${msg.role === 'user' ? 'text-indigo-300' : 'text-emerald-400'}`}>
+                      {msg.role === 'user' ? 'User' : 'AI Assistant'}
+                    </span>
+                    {msg.metadata?.model && (
+                      <span className="text-[10px] bg-emerald-950/90 border border-emerald-800/60 text-emerald-300 px-2 py-0.5 rounded-full font-mono">
+                        {msg.metadata.model.replace('gemini-', '')}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[10px] text-slate-400 font-mono">{msg.timestamp}</span>
                 </div>
 
@@ -419,7 +447,42 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
       </div>
 
       {/* Input Box Footer */}
-      <div className="p-3.5 border-t border-slate-800 bg-slate-900/90 backdrop-blur">
+      <div className="p-3.5 border-t border-slate-800 bg-slate-900/90 backdrop-blur space-y-2">
+        {/* Node Model Selector & Hierarchy Complexity Bar */}
+        <div className="flex items-center justify-between gap-2 bg-slate-950 border border-slate-800/90 rounded-xl px-2.5 py-1.5 text-xs">
+          {/* Complexity pill */}
+          <div className="flex items-center gap-1.5 text-[10px] text-slate-300 min-w-0">
+            <span className={`px-1.5 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1 border ${
+              complexity.tier === 'low'
+                ? 'bg-emerald-950/90 text-emerald-300 border-emerald-800/80'
+                : complexity.tier === 'medium'
+                ? 'bg-amber-950/90 text-amber-300 border-amber-800/80'
+                : 'bg-indigo-950/90 text-indigo-300 border-indigo-800/80'
+            }`}>
+              {complexity.tier === 'low' ? <Zap className="w-2.5 h-2.5 text-emerald-400" /> :
+               complexity.tier === 'medium' ? <Cpu className="w-2.5 h-2.5 text-amber-400" /> :
+               <Brain className="w-2.5 h-2.5 text-indigo-400" />}
+              {complexity.tier} Score: {complexity.score}
+            </span>
+          </div>
+
+          {/* Model picker */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <Cpu className="w-3 h-3 text-indigo-400" />
+            <select
+              value={threadModelOverride}
+              onChange={(e) => setThreadModelOverride(e.target.value)}
+              className="bg-slate-900 border border-slate-800 text-[11px] text-indigo-200 rounded-lg px-2 py-0.5 outline-none font-semibold cursor-pointer shadow-sm"
+            >
+              {AVAILABLE_MODELS.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.name} ({model.badge}){model.id === complexity.recommendedModelId ? ' ★ Rec' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className="relative flex items-center">
           <input
             type="text"
@@ -433,17 +496,17 @@ export const ThreadDrawer: React.FC<ThreadDrawerProps> = ({
             onClick={handleSend}
             disabled={!threadInputValue.trim() || isLoading}
             className="absolute right-1.5 p-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-lg transition shadow-md shadow-indigo-600/30"
-            title="Send branch reply"
+            title={`Send branch reply using ${AVAILABLE_MODELS.find(m => m.id === threadModelOverride)?.name}`}
           >
             <Send className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400 px-1">
+        <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
           <span className="flex items-center gap-1">
             <Info className="w-3 h-3 text-indigo-400" /> Dispatches {activeThreadPath.length} ancestor nodes as context
           </span>
-          <span>Press Enter to send</span>
+          <span>Model: <strong>{AVAILABLE_MODELS.find(m => m.id === threadModelOverride)?.name.replace('Gemini ', '')}</strong></span>
         </div>
       </div>
 

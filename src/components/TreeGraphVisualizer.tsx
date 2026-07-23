@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Network, GitFork, Terminal, Bot, User, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
+import { Network, GitFork, Terminal, Bot, User, ChevronDown, ChevronRight, Sparkles, Cpu } from 'lucide-react';
 import { ChatNode } from '../types/chat';
 
 interface TreeGraphVisualizerProps {
@@ -69,6 +69,23 @@ export const TreeGraphVisualizer: React.FC<TreeGraphVisualizerProps> = ({
               <span className="text-[10px] text-slate-400 font-mono bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
                 Depth {level}
               </span>
+              {node.role === 'assistant' && node.metadata?.model && (() => {
+                const modelId = node.metadata.model;
+                const isPro = modelId.includes('pro');
+                const is20 = modelId.includes('2.0');
+                return (
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center gap-1 border ${
+                    isPro 
+                      ? 'bg-indigo-950/90 border-indigo-700/80 text-indigo-300' 
+                      : is20 
+                      ? 'bg-cyan-950/90 border-cyan-700/80 text-cyan-300'
+                      : 'bg-emerald-950/90 border-emerald-700/80 text-emerald-300'
+                  }`}>
+                    <Cpu className="w-3 h-3" />
+                    {modelId.replace('gemini-', '')}
+                  </span>
+                );
+              })()}
               {isSelectedThread && (
                 <span className="text-[10px] bg-indigo-900/90 border border-indigo-500/80 text-indigo-200 px-2 py-0.5 rounded-full font-semibold animate-pulse">
                   Active in Thread

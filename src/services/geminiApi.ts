@@ -1,25 +1,79 @@
-import { ChatNode, ModelOption } from '../types/chat';
+import { ChatNode, ModelOption, TreeComplexityMetrics } from '../types/chat';
 
 export const AVAILABLE_MODELS: ModelOption[] = [
+  {
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash',
+    description: 'Next-gen lightweight model optimized for rapid, simple thread replies',
+    badge: 'Ultra Fast',
+    tier: 'low',
+    speed: 'Ultra Fast',
+    reasoning: 'Standard'
+  },
   {
     id: 'gemini-2.5-flash',
     name: 'Gemini 2.5 Flash',
     description: 'High-speed, intelligent model optimized for tree context traversal',
-    badge: 'Fast & Smart'
-  },
-  {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    description: 'Next-gen lightweight model for rapid thread replies',
-    badge: 'Ultra Fast'
+    badge: 'Fast & Smart',
+    tier: 'medium',
+    speed: 'Fast',
+    reasoning: 'Smart'
   },
   {
     id: 'gemini-1.5-pro',
     name: 'Gemini 1.5 Pro',
-    description: 'Deep reasoning model ideal for complex branch synthesis',
-    badge: 'Pro Reasoning'
+    description: 'Deep reasoning model ideal for complex branch synthesis & deep context',
+    badge: 'Pro Reasoning',
+    tier: 'high',
+    speed: 'Moderate',
+    reasoning: 'Pro Deep'
   }
 ];
+
+export function calculatePathComplexity(
+  historyPath: ChatNode[],
+  branchCount: number = 0
+): TreeComplexityMetrics {
+  const depth = historyPath.length;
+  const totalChars = historyPath.reduce((sum, node) => sum + node.content.length, 0);
+  const estimatedTokens = Math.max(1, Math.ceil(totalChars / 4));
+
+  const depthScore = depth * 1.5;
+  const tokenScore = estimatedTokens / 200;
+  const branchScore = branchCount * 2.0;
+
+  const rawScore = depthScore + tokenScore + branchScore;
+  const score = Math.round(rawScore * 10) / 10;
+
+  let tier: 'low' | 'medium' | 'high' = 'low';
+  let recommendedModelId = 'gemini-2.0-flash';
+  let reason = '';
+
+  if (score < 8) {
+    tier = 'low';
+    recommendedModelId = 'gemini-2.0-flash';
+    reason = `Low complexity (Depth ${depth}, ~${estimatedTokens} tokens). Gemini 2.0 Flash recommended for instant responses.`;
+  } else if (score <= 18) {
+    tier = 'medium';
+    recommendedModelId = 'gemini-2.5-flash';
+    reason = `Medium complexity (Depth ${depth}, ~${estimatedTokens} tokens). Gemini 2.5 Flash recommended for balanced intelligence.`;
+  } else {
+    tier = 'high';
+    recommendedModelId = 'gemini-1.5-pro';
+    reason = `High complexity (Depth ${depth}, ~${estimatedTokens} tokens, ${branchCount} branches). Gemini 1.5 Pro recommended for deep context reasoning.`;
+  }
+
+  return {
+    score,
+    tier,
+    recommendedModelId,
+    depth,
+    estimatedTokens,
+    branchCount,
+    reason
+  };
+}
+
 
 export async function callGeminiAPI(
   historyPath: ChatNode[],
