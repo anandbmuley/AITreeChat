@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ChatNode, ViewMode } from '../types/chat';
+import { ChatNode } from '../types/chat';
 import { callGeminiAPI, AVAILABLE_MODELS, calculatePathComplexity } from '../services/geminiApi';
 
 const getTimestamp = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -43,10 +43,19 @@ const INITIAL_NODES: Record<string, ChatNode> = {
   "node-5": {
     id: "node-5",
     parentId: "node-2",
-    childrenIds: [],
+    childrenIds: ["node-6"],
     role: "user",
     content: "What about API Gateway pattern? Should we build our own or use standard solutions like Kong/Envoy?",
     timestamp: "10:12 AM"
+  },
+  "node-6": {
+    id: "node-6",
+    parentId: "node-5",
+    childrenIds: [],
+    role: "assistant",
+    content: "For most teams, **use a standard solution** rather than building your own:\n\n* **Kong/Envoy/Traefik** already solve routing, rate limiting, auth, and observability with battle-tested reliability.\n* **Build your own only** if you have highly custom routing logic or extreme latency requirements that off-the-shelf gateways can't meet.\n* Start with a managed solution (e.g. Kong) and only invest in a custom gateway once you hit a concrete limitation.",
+    timestamp: "10:13 AM",
+    metadata: { model: "gemini-2.5-flash" }
   }
 };
 
@@ -56,7 +65,6 @@ export function useTreeChatState() {
   const [nodes, setNodes] = useState<Record<string, ChatNode>>(INITIAL_NODES);
   const [rootIds, setRootIds] = useState<string[]>(INITIAL_ROOT_IDS);
   const [activeThreadNodeId, setActiveThreadNodeId] = useState<string | null>(null);
-  const [activeViewMode, setActiveViewMode] = useState<ViewMode>('feed');
   const [selectedModel, setSelectedModel] = useState<string>(AVAILABLE_MODELS[0].id);
   const [apiKey, setApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -368,7 +376,6 @@ export function useTreeChatState() {
     nodes,
     rootIds,
     activeThreadNodeId,
-    activeViewMode,
     selectedModel,
     apiKey,
     isLoading,
@@ -390,7 +397,6 @@ export function useTreeChatState() {
     inspectNodePath,
     setSelectedModel,
     setApiKey,
-    setActiveViewMode,
     setSearchQuery,
     exportGraph,
     importGraph,

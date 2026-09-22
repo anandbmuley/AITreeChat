@@ -3,20 +3,18 @@ import { AlertTriangle, X } from 'lucide-react';
 import { useTreeChatState } from './hooks/useTreeChatState';
 import { useTheme } from './hooks/useTheme';
 import { Sidebar } from './components/Sidebar';
-import { MainFeed } from './components/MainFeed';
 import { ThreadDrawer } from './components/ThreadDrawer';
 import { PathInspectorModal } from './components/PathInspectorModal';
 import { TreeGraphVisualizer } from './components/TreeGraphVisualizer';
 import { BranchSynthesisModal } from './components/BranchSynthesisModal';
 
 export default function App() {
-  const { themeMode, setThemeMode } = useTheme();
+  const { themeMode, setThemeMode, isDark } = useTheme();
 
   const {
     nodes,
     rootIds,
     activeThreadNodeId,
-    activeViewMode,
     selectedModel,
     apiKey,
     isLoading,
@@ -37,7 +35,6 @@ export default function App() {
     inspectNodePath,
     setSelectedModel,
     setApiKey,
-    setActiveViewMode,
     setSearchQuery,
     exportGraph,
     importGraph,
@@ -57,8 +54,6 @@ export default function App() {
       <Sidebar
         themeMode={themeMode}
         setThemeMode={setThemeMode}
-        activeViewMode={activeViewMode}
-        setActiveViewMode={setActiveViewMode}
         selectedModel={selectedModel}
         setSelectedModel={setSelectedModel}
         apiKey={apiKey}
@@ -96,33 +91,23 @@ export default function App() {
           </div>
         )}
 
-        {activeViewMode === 'feed' ? (
-          <MainFeed
-            rootIds={rootIds}
-            nodes={nodes}
-            activeThreadId={activeThreadNodeId}
-            isLoading={isLoading}
-            searchQuery={searchQuery}
-            selectedModel={selectedModel}
-            setSelectedModel={setSelectedModel}
-            getMainLineNodes={getMainLineNodes}
-            getComplexityForPath={getComplexityForPath}
-            onSendMain={sendMainMessage}
-            onOpenThread={openThread}
-            onInspectPath={inspectNodePath}
-            getReplyCount={getReplyCount}
-          />
-        ) : (
-          <TreeGraphVisualizer
-            rootIds={rootIds}
-            nodes={nodes}
-            activeThreadId={activeThreadNodeId}
-            onOpenThread={openThread}
-            onInspectPath={inspectNodePath}
-            getPathToRoot={getPathToRoot}
-            getReplyCount={getReplyCount}
-          />
-        )}
+        <TreeGraphVisualizer
+          rootIds={rootIds}
+          nodes={nodes}
+          activeThreadId={activeThreadNodeId}
+          isDark={isDark}
+          searchQuery={searchQuery}
+          isLoading={isLoading}
+          selectedModel={selectedModel}
+          setSelectedModel={setSelectedModel}
+          getMainLineNodes={getMainLineNodes}
+          getComplexityForPath={getComplexityForPath}
+          onSendMain={sendMainMessage}
+          onOpenThread={openThread}
+          onInspectPath={inspectNodePath}
+          getPathToRoot={getPathToRoot}
+          getReplyCount={getReplyCount}
+        />
       </div>
 
       {/* Right Sliding Side Drawer for Active Nested Thread Branch */}
