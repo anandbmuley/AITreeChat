@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  GitFork, 
-  MessageSquare, 
-  Layers, 
-  CheckCircle2, 
-  Sparkles, 
-  Key, 
-  Download, 
-  Upload, 
-  RotateCcw, 
-  Network, 
-  Cpu, 
+import {
+  GitFork,
+  Layers,
+  CheckCircle2,
+  Sparkles,
+  Key,
+  Download,
+  Upload,
+  RotateCcw,
+  Cpu,
   Merge,
   Search,
   Plus,
@@ -18,13 +16,10 @@ import {
   Moon,
   Laptop
 } from 'lucide-react';
-import { ViewMode } from '../types/chat';
 import { AVAILABLE_MODELS } from '../services/geminiApi';
 import { ThemeMode } from '../hooks/useTheme';
 
 interface SidebarProps {
-  activeViewMode: ViewMode;
-  setActiveViewMode: (mode: ViewMode) => void;
   selectedModel: string;
   setSelectedModel: (modelId: string) => void;
   apiKey: string;
@@ -44,8 +39,6 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  activeViewMode,
-  setActiveViewMode,
   selectedModel,
   setSelectedModel,
   apiKey,
@@ -104,32 +97,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Plus className="w-4 h-4" />
           <span>New Chat</span>
         </button>
-
-        {/* View Mode Navigation Switcher */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl text-xs">
-          <button
-            onClick={() => setActiveViewMode('feed')}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg font-medium transition ${
-              activeViewMode === 'feed'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Feed View</span>
-          </button>
-          <button
-            onClick={() => setActiveViewMode('visualizer')}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg font-medium transition ${
-              activeViewMode === 'visualizer'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-            }`}
-          >
-            <Network className="w-3.5 h-3.5" />
-            <span>Graph Map</span>
-          </button>
-        </div>
 
         {/* Theme Mode Switcher */}
         <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-2.5 space-y-2">

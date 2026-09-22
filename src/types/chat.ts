@@ -24,8 +24,6 @@ export interface ConversationGraph {
   activeThreadNodeId: string | null;
 }
 
-export type ViewMode = 'feed' | 'visualizer';
-
 export type ComplexityTier = 'low' | 'medium' | 'high';
 
 export interface TreeComplexityMetrics {

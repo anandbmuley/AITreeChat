@@ -1,6 +1,11 @@
-# CLAUDE.md
+You are a Full Stack React developer. Your job is to build and maintain the AITreeChat application, ensuring efficient state management, seamless API integration, and a responsive simply designed user interface.
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Development guidelines
+
+- Always create separate branches for new features or bug fixes using pattern `feature/<github-issue-number>-<feature-name>` or `bugfix/<github-issue-number>-<bug-description>`
+- Create a pull request for review before merging changes into the development branch.
+- Always follow ReactJS best practices and coding conventions as per the official React documentation for the version used in the project.
+- Follow SOLID design principles in your React components and hooks to ensure maintainable and scalable code.
 
 ## Commands
 
@@ -29,7 +34,7 @@ AITreeChat models an LLM conversation as a DAG rather than a linear array, so th
 
 This hook owns all conversation state and is the only place that mutates the `nodes`/`rootIds` graph. Key traversal helpers, all derived from `nodes` via `useCallback`:
 
-- `getPathToRoot(nodeId)` — walks `parentId` pointers up to the root, O(depth). This is the *only* thing ever sent to the LLM as conversation history — never the whole graph. This is the mechanism that prevents context poisoning between branches.
+- `getPathToRoot(nodeId)` — walks `parentId` pointers up to the root, O(depth). This is the _only_ thing ever sent to the LLM as conversation history — never the whole graph. This is the mechanism that prevents context poisoning between branches.
 - `getMainLineNodes()` — follows `childrenIds` filtered to `metadata.isMain` to reconstruct the linear main-feed chain.
 - `getThreadDescendants(parentId)` / `getBranchesForNode(parentId)` — recursively collect non-main children into thread sub-trees for the Thread Drawer.
 - `getComplexityForPath(nodeId)` — computes `TreeComplexityMetrics` (see below) for either a specific node's ancestor path or the main line.
@@ -39,6 +44,7 @@ This hook owns all conversation state and is the only place that mutates the `no
 ### Model routing & complexity scoring (`src/services/geminiApi.ts`)
 
 `calculatePathComplexity(historyPath, branchCount)` computes `C = depth*1.5 + (totalPathTokens/200) + branchCount*2.0` (tokens estimated as `chars/4`) and maps the score to a tier/recommended model:
+
 - `C < 8` → low → `gemini-2.0-flash`
 - `8 <= C <= 18` → medium → `gemini-2.5-flash`
 - `C > 18` → high → `gemini-1.5-pro`
@@ -50,6 +56,7 @@ This hook owns all conversation state and is the only place that mutates the `no
 ### Component structure (`src/App.tsx` + `src/components/`)
 
 `App.tsx` wires `useTreeChatState()` + `useTheme()` into the layout and holds no conversation logic itself:
+
 - `Sidebar` — navigation, model/theme/API-key selection, session import/export/reset.
 - `MainFeed` — renders the main-line chain (`activeViewMode === 'feed'`).
 - `TreeGraphVisualizer` — alternate DAG visualization of the full graph (`activeViewMode === 'visualizer'`); clicking a node opens it in the Thread Drawer.
