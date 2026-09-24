@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   GitFork,
   Layers,
@@ -14,10 +14,10 @@ import {
   Plus,
   Sun,
   Moon,
-  Laptop
-} from 'lucide-react';
-import { AVAILABLE_MODELS } from '../services/geminiApi';
-import { ThemeMode } from '../hooks/useTheme';
+  Laptop,
+} from "lucide-react";
+import { AVAILABLE_MODELS } from "../services/geminiApi";
+import { ThemeMode } from "../hooks/useTheme";
 
 interface SidebarProps {
   selectedModel: string;
@@ -80,15 +80,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div className="w-72 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-4 hidden md:flex select-none transition-colors duration-200">
       <div className="space-y-4 overflow-y-auto pr-1">
-        
         {/* Brand Header */}
         <div className="flex items-center gap-3 px-2">
           <div className="p-2 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-xl text-white shadow-lg shadow-indigo-500/25">
             <GitFork className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-sm tracking-wider text-slate-900 dark:text-slate-100 uppercase">AI Tree Chat</h1>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Branching Dialogue System</p>
+            <h1 className="font-bold text-sm tracking-wider text-slate-900 dark:text-slate-100 uppercase">
+              AI Tree Chat
+            </h1>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              Branching Dialogue System
+            </p>
           </div>
         </div>
 
@@ -117,11 +120,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <div className="grid grid-cols-3 gap-1 p-1 bg-slate-200/80 dark:bg-slate-950 rounded-lg text-xs">
             <button
-              onClick={() => setThemeMode('system')}
+              onClick={() => setThemeMode("system")}
               className={`flex items-center justify-center gap-1 py-1 rounded font-medium transition text-[11px] ${
-                themeMode === 'system'
-                  ? 'bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                themeMode === "system"
+                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
               title="Dynamic theme matching system (OS) preference"
             >
@@ -129,11 +132,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>System</span>
             </button>
             <button
-              onClick={() => setThemeMode('light')}
+              onClick={() => setThemeMode("light")}
               className={`flex items-center justify-center gap-1 py-1 rounded font-medium transition text-[11px] ${
-                themeMode === 'light'
-                  ? 'bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                themeMode === "light"
+                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
               title="Light theme mode"
             >
@@ -141,11 +144,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Light</span>
             </button>
             <button
-              onClick={() => setThemeMode('dark')}
+              onClick={() => setThemeMode("dark")}
               className={`flex items-center justify-center gap-1 py-1 rounded font-medium transition text-[11px] ${
-                themeMode === 'dark'
-                  ? 'bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                themeMode === "dark"
+                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
               title="Dark theme mode"
             >
@@ -180,11 +183,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-3 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Model Engine
+              <Cpu className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />{" "}
+              Model Engine
             </span>
             <button
               onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-              className={`p-1 rounded transition text-xs ${apiKey ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+              className={`p-1 rounded transition text-xs ${apiKey ? "text-emerald-500" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"}`}
               title={apiKey ? "API Key Set" : "Configure Custom API Key"}
             >
               <Key className="w-3.5 h-3.5" />
@@ -201,12 +205,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="font-medium">Demo Mode</span>
             <span
               className={`relative inline-flex h-4 w-7 items-center rounded-full transition ${
-                demoMode ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                demoMode ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
               }`}
             >
               <span
                 className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${
-                  demoMode ? 'translate-x-3.5' : 'translate-x-0.5'
+                  demoMode ? "translate-x-3.5" : "translate-x-0.5"
                 }`}
               />
             </span>
@@ -230,11 +234,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Paste Vertex AI API Key..."
+                placeholder="Paste Gemini API Key..."
                 className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 outline-none transition"
               />
               <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
-                Vertex AI express-mode key (starts with AQ.).
+                Google AI Studio API key (AQ... or AIza...).
               </p>
             </div>
           )}
@@ -253,11 +257,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
               <span>Root Streams (L-0):</span>
-              <span className="font-mono text-slate-800 dark:text-slate-200">{rootCount}</span>
+              <span className="font-mono text-slate-800 dark:text-slate-200">
+                {rootCount}
+              </span>
             </div>
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
               <span>Active Thread Depth:</span>
-              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{activeThreadDepth} nodes</span>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                {activeThreadDepth} nodes
+              </span>
             </div>
           </div>
 
@@ -267,17 +275,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Context Isolation</span>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
-              Threads strictly extract Ancestor Path to Root, guaranteeing zero cross-branch context leakage.
+              Threads strictly extract Ancestor Path to Root, guaranteeing zero
+              cross-branch context leakage.
             </p>
           </div>
         </div>
-
       </div>
 
       {/* Footer Controls: Export, Import, Reset */}
       <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80 space-y-2 text-[11px]">
         {importError && (
-          <p className="text-rose-500 text-[10px] mb-1">Failed to import JSON graph file.</p>
+          <p className="text-rose-500 text-[10px] mb-1">
+            Failed to import JSON graph file.
+          </p>
         )}
         <div className="flex items-center justify-between gap-2">
           <button
@@ -292,7 +302,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <label className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg transition cursor-pointer">
             <Upload className="w-3.5 h-3.5" />
             <span>Import</span>
-            <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
           </label>
         </div>
 
@@ -311,7 +326,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span>v1.0.0</span>
         </div>
       </div>
-
     </div>
   );
 };

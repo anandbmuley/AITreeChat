@@ -21,7 +21,7 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     role: "assistant",
     content: "Here are 3 fundamental microservices design patterns to evaluate:\n\n1. **Event-Driven Architecture (EDA)** - Decouples services using message brokers like Kafka/RabbitMQ.\n2. **API Gateway Pattern** - Single entry point for routing, authentication, and rate limiting.\n3. **Database-per-Service** - Ensures loose coupling by isolating database instances per domain.",
     timestamp: "10:01 AM",
-    metadata: { model: "gemini-2.5-flash", isMain: true }
+    metadata: { model: "gemini-3.8-flash", isMain: true }
   },
   "node-3": {
     id: "node-3",
@@ -38,7 +38,7 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     role: "assistant",
     content: "To guarantee idempotency in Event-Driven systems:\n\n* **Unique Message IDs:** Tag every published event with a UUID.\n* **Idempotency Key Database:** Consumers store processed message IDs in a transactional cache (e.g. Redis).\n* **Outbox Pattern:** Atomically write database updates and event logs within the same transaction.",
     timestamp: "10:06 AM",
-    metadata: { model: "gemini-2.5-flash" }
+    metadata: { model: "gemini-3.8-flash" }
   },
   "node-5": {
     id: "node-5",
@@ -55,7 +55,7 @@ const INITIAL_NODES: Record<string, ChatNode> = {
     role: "assistant",
     content: "For most teams, **use a standard solution** rather than building your own:\n\n* **Kong/Envoy/Traefik** already solve routing, rate limiting, auth, and observability with battle-tested reliability.\n* **Build your own only** if you have highly custom routing logic or extreme latency requirements that off-the-shelf gateways can't meet.\n* Start with a managed solution (e.g. Kong) and only invest in a custom gateway once you hit a concrete limitation.",
     timestamp: "10:13 AM",
-    metadata: { model: "gemini-2.5-flash" }
+    metadata: { model: "gemini-3.8-flash" }
   }
 };
 
