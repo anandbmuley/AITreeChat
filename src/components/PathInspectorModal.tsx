@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Terminal, X, Copy, Check, ArrowRight, Database, ShieldCheck } from 'lucide-react';
 import { ChatNode } from '../types/chat';
+import { getPathTokenCount } from '../services/geminiApi';
 
 interface PathInspectorModalProps {
   inspectedNodeId: string;
@@ -29,7 +30,7 @@ export const PathInspectorModal: React.FC<PathInspectorModalProps> = ({
   };
 
   const totalChars = path.reduce((acc, n) => acc + n.content.length, 0);
-  const estimatedTokens = Math.ceil(totalChars / 4);
+  const totalTokens = getPathTokenCount(path);
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in select-none">
@@ -79,7 +80,7 @@ export const PathInspectorModal: React.FC<PathInspectorModalProps> = ({
             <div className="flex items-center gap-4 text-[11px] font-mono text-slate-500 dark:text-slate-400">
               <span>Path Nodes: <strong className="text-indigo-600 dark:text-indigo-400">{path.length}</strong></span>
               <span>Total Chars: <strong className="text-indigo-600 dark:text-indigo-400">{totalChars}</strong></span>
-              <span>Est. Tokens: <strong className="text-emerald-600 dark:text-emerald-400">~{estimatedTokens}</strong></span>
+              <span>Tokens: <strong className="text-emerald-600 dark:text-emerald-400">{totalTokens > 0 ? totalTokens : 'n/a'}</strong></span>
             </div>
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">

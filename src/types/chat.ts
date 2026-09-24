@@ -1,8 +1,15 @@
 export type MessageRole = 'user' | 'assistant' | 'system';
 
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
 export interface NodeMetadata {
   model?: string;
-  tokens?: number;
+  /** Token usage reported by the LLM API for the request that produced this (assistant) node. */
+  usage?: TokenUsage;
   forkTitle?: string;
   archived?: boolean;
   isMain?: boolean;
@@ -31,7 +38,8 @@ export interface TreeComplexityMetrics {
   tier: ComplexityTier;
   recommendedModelId: string;
   depth: number;
-  estimatedTokens: number;
+  /** Cumulative tokens for the path, as reported by the LLM API (0 if none reported yet). */
+  totalTokens: number;
   branchCount: number;
   reason: string;
 }
@@ -54,6 +62,5 @@ export interface SynthesisRequest {
 export interface PathInspectionData {
   targetNodeId: string;
   pathNodes: ChatNode[];
-  totalPayloadTokensEstimate: number;
 }
 

@@ -8,6 +8,7 @@ interface BranchSynthesisModalProps {
   nodes: Record<string, ChatNode>;
   selectedModel: string;
   apiKey: string;
+  demoMode: boolean;
   getPathToRoot: (nodeId: string) => ChatNode[];
   onClose: () => void;
 }
@@ -16,6 +17,7 @@ export const BranchSynthesisModal: React.FC<BranchSynthesisModalProps> = ({
   nodes,
   selectedModel,
   apiKey,
+  demoMode,
   getPathToRoot,
   onClose,
 }) => {
@@ -36,7 +38,7 @@ export const BranchSynthesisModal: React.FC<BranchSynthesisModalProps> = ({
     setSynthesisResult(null);
 
     try {
-      const result = await synthesizeBranches(pathA, pathB, selectedModel, apiKey);
+      const result = await synthesizeBranches(pathA, pathB, selectedModel, apiKey, demoMode);
       setSynthesisResult(result);
     } catch (err: any) {
       console.error("Synthesis failed", err);

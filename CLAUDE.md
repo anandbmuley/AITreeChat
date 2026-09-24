@@ -18,7 +18,7 @@ npm run preview      # preview the production build locally
 
 There is no test suite or linter configured in this repo. `npm run build` (which runs `tsc` with `strict: true`) is the only automated correctness check available — run it after making changes.
 
-The Gemini API key can be supplied via `VITE_GEMINI_API_KEY` env var, or entered at runtime in the Sidebar UI (stored in component state, passed as `apiKey`/`customApiKey` through the call chain). Without a key, `callGeminiAPI` falls back to a canned `generateSimulationResponse` so the app is fully usable offline/without credentials.
+LLM calls go through plain `fetch` to the Gemini REST Interactions API (`https://generativelanguage.googleapis.com/v1beta/interactions`, headers `x-goog-api-key`, `Content-Type: application/json`, `Api-Revision`). No Gemini SDK is used — do not add one. The key can be supplied via `VITE_GEMINI_API_KEY` or entered in the Sidebar (passed as `apiKey`). A Sidebar **Demo Mode** toggle (`demoMode`, on by default when no env key exists) makes `callGeminiAPI` return canned `generateSimulationResponse` output with no network call; with demo mode off and no key it throws.
 
 ## Architecture
 
@@ -45,13 +45,13 @@ This hook owns all conversation state and is the only place that mutates the `no
 
 `calculatePathComplexity(historyPath, branchCount)` computes `C = depth*1.5 + (totalPathTokens/200) + branchCount*2.0` (tokens estimated as `chars/4`) and maps the score to a tier/recommended model:
 
-- `C < 8` → low → `gemini-2.0-flash`
-- `8 <= C <= 18` → medium → `gemini-2.5-flash`
-- `C > 18` → high → `gemini-1.5-pro`
+- `C < 8` → low → `gemini-3.5-flash-lite`
+- `8 <= C <= 18` → medium → `gemini-3.8-flash`
+- `C > 18` → high → `gemini-3.1-pro-preview`
 
 `AVAILABLE_MODELS` is the source of truth for selectable models (id, tier, description). Model selection is per-node/per-request (`selectedModel` state + optional `modelOverride` param on send functions), not global to the session.
 
-`callGeminiAPI` talks to the Gemini REST API directly from the client with exponential backoff (3 attempts, 1s→2s→4s), retrying only on non-4xx or 429 errors and bailing immediately on API-key/model-not-found/unsupported errors. When no API key is configured it falls back to `generateSimulationResponse`, a keyword-matched canned-response generator — useful for UI development without hitting real credentials.
+`callGeminiAPI` calls the Gemini REST Interactions API via `fetch` from the client with exponential backoff (3 attempts, 1s→2s→4s), retrying only on non-4xx or 429 errors and bailing immediately on API-key/model-not-found/unsupported errors. In demo mode it uses `generateSimulationResponse`, a keyword-matched canned-response generator — useful for UI development without hitting real credentials.
 
 ### Component structure (`src/App.tsx` + `src/components/`)
 
