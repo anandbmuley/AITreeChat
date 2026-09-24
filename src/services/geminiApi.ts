@@ -2,9 +2,9 @@ import { ChatNode, ModelOption, TokenUsage, TreeComplexityMetrics } from '../typ
 
 export const AVAILABLE_MODELS: ModelOption[] = [
   {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    description: 'Next-gen lightweight model optimized for rapid, simple thread replies',
+    id: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash-Lite',
+    description: 'Lightweight, lowest-latency model for rapid, simple thread replies',
     badge: 'Ultra Fast',
     tier: 'low',
     speed: 'Ultra Fast',
@@ -20,8 +20,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
     reasoning: 'Smart'
   },
   {
-    id: 'gemini-1.5-pro',
-    name: 'Gemini 1.5 Pro',
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
     description: 'Deep reasoning model ideal for complex branch synthesis & deep context',
     badge: 'Pro Reasoning',
     tier: 'high',
@@ -63,21 +63,21 @@ export function calculatePathComplexity(
   const score = Math.round(rawScore * 10) / 10;
 
   let tier: 'low' | 'medium' | 'high' = 'low';
-  let recommendedModelId = 'gemini-2.0-flash';
+  let recommendedModelId = 'gemini-2.5-flash-lite';
   let reason = '';
 
   if (score < 8) {
     tier = 'low';
-    recommendedModelId = 'gemini-2.0-flash';
-    reason = `Low complexity (Depth ${depth}, ${totalTokens} tokens). Gemini 2.0 Flash recommended for instant responses.`;
+    recommendedModelId = 'gemini-2.5-flash-lite';
+    reason = `Low complexity (Depth ${depth}, ${totalTokens} tokens). Gemini 2.5 Flash-Lite recommended for instant responses.`;
   } else if (score <= 18) {
     tier = 'medium';
     recommendedModelId = 'gemini-2.5-flash';
     reason = `Medium complexity (Depth ${depth}, ${totalTokens} tokens). Gemini 2.5 Flash recommended for balanced intelligence.`;
   } else {
     tier = 'high';
-    recommendedModelId = 'gemini-1.5-pro';
-    reason = `High complexity (Depth ${depth}, ${totalTokens} tokens, ${branchCount} branches). Gemini 1.5 Pro recommended for deep context reasoning.`;
+    recommendedModelId = 'gemini-2.5-pro';
+    reason = `High complexity (Depth ${depth}, ${totalTokens} tokens, ${branchCount} branches). Gemini 2.5 Pro recommended for deep context reasoning.`;
   }
 
   return {
@@ -95,8 +95,15 @@ export function calculatePathComplexity(
 export async function callGeminiAPI(
   historyPath: ChatNode[],
   selectedModel: string = 'gemini-2.5-flash',
-  customApiKey?: string
+  customApiKey?: string,
+  demoMode: boolean = false
 ): Promise<GeminiResult> {
+  // Demo mode never touches the network: canned responses only.
+  if (demoMode) {
+    const lastUserPrompt = historyPath[historyPath.length - 1]?.content || 'Unknown prompt';
+    return { text: generateSimulationResponse(lastUserPrompt, historyPath.length) };
+  }
+
   const apiKey = (customApiKey?.trim() || import.meta.env.VITE_GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
 
   // Standardize message roles for Gemini REST API
@@ -116,89 +123,88 @@ export async function callGeminiAPI(
     }
   };
 
-  if (apiKey.trim()) {
-    const endpoint = `https://aiplatform.googleapis.com/v1/publishers/google/models/${selectedModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-    let delay = 1000;
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (generatedText) {
-            const meta = data.usageMetadata;
-            const promptTokens = meta?.promptTokenCount ?? 0;
-            const completionTokens = meta?.candidatesTokenCount ?? 0;
-            return {
-              text: generatedText,
-              usage: meta
-                ? {
-                    promptTokens,
-                    completionTokens,
-                    totalTokens: meta.totalTokenCount ?? promptTokens + completionTokens
-                  }
-                : undefined
-            };
-          }
-          throw new Error("No text content returned from Gemini API response.");
-        } else {
-          // Parse standard Gemini API error format
-          let apiErrorMessage = `API Request failed with HTTP ${response.status}: ${response.statusText}`;
-          try {
-            const errJson = await response.json();
-            if (errJson?.error?.message) {
-              apiErrorMessage = errJson.error.message;
-            }
-          } catch (_) {
-            // Ignore JSON parsing failure
-          }
-
-          const error = new Error(apiErrorMessage);
-
-          // Non-retriable HTTP client errors (4xx excluding 429 rate limits) should throw immediately
-          if (response.status >= 400 && response.status < 500 && response.status !== 429) {
-            throw error;
-          }
-          lastError = error;
-        }
-      } catch (err: any) {
-        lastError = err instanceof Error ? err : new Error(String(err));
-        // Throw immediately if it's a known non-retriable client error
-        if (
-          attempt === 2 ||
-          lastError.message.includes('is not found') ||
-          lastError.message.includes('API key') ||
-          lastError.message.includes('is not supported')
-        ) {
-          throw lastError;
-        }
-        console.warn(`[Gemini API] Attempt ${attempt + 1} failed: ${lastError.message}. Retrying in ${delay}ms...`);
-      }
-      await new Promise(resolve => setTimeout(resolve, delay));
-      delay *= 2;
-    }
-
-    throw lastError || new Error("Failed to communicate with Gemini API.");
+  if (!apiKey) {
+    throw new Error('No Vertex AI API key configured. Add a key in the sidebar (or VITE_GEMINI_API_KEY), or turn on Demo Mode.');
   }
 
-  // Simulation mode fallback generator when API key is unconfigured
-  const lastUserPrompt = historyPath[historyPath.length - 1]?.content || 'Unknown prompt';
-  return { text: generateSimulationResponse(lastUserPrompt, historyPath.length) };
+  const endpoint = `https://aiplatform.googleapis.com/v1/publishers/google/models/${selectedModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  let delay = 1000;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (generatedText) {
+          const meta = data.usageMetadata;
+          const promptTokens = meta?.promptTokenCount ?? 0;
+          const completionTokens = meta?.candidatesTokenCount ?? 0;
+          return {
+            text: generatedText,
+            usage: meta
+              ? {
+                  promptTokens,
+                  completionTokens,
+                  totalTokens: meta.totalTokenCount ?? promptTokens + completionTokens
+                }
+              : undefined
+          };
+        }
+        throw new Error("No text content returned from Gemini API response.");
+      } else {
+        // Parse standard Gemini API error format
+        let apiErrorMessage = `API Request failed with HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errJson = await response.json();
+          if (errJson?.error?.message) {
+            apiErrorMessage = errJson.error.message;
+          }
+        } catch (_) {
+          // Ignore JSON parsing failure
+        }
+
+        const error = new Error(apiErrorMessage);
+
+        // Non-retriable HTTP client errors (4xx excluding 429 rate limits) should throw immediately
+        if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+          throw error;
+        }
+        lastError = error;
+      }
+    } catch (err: any) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      // Throw immediately if it's a known non-retriable client error
+      if (
+        attempt === 2 ||
+        lastError.message.includes('is not found') ||
+        lastError.message.includes('API key') ||
+        lastError.message.includes('is not supported')
+      ) {
+        throw lastError;
+      }
+      console.warn(`[Gemini API] Attempt ${attempt + 1} failed: ${lastError.message}. Retrying in ${delay}ms...`);
+    }
+    await new Promise(resolve => setTimeout(resolve, delay));
+    delay *= 2;
+  }
+
+  throw lastError || new Error("Failed to communicate with Gemini API.");
 }
 
 export async function synthesizeBranches(
   pathA: ChatNode[],
   pathB: ChatNode[],
   selectedModel: string = 'gemini-2.5-flash',
-  customApiKey?: string
+  customApiKey?: string,
+  demoMode: boolean = false
 ): Promise<string> {
   const prompt = `Synthesize and compare the following two conversation branches:
 
@@ -223,7 +229,7 @@ ${pathB.map(n => `[${n.role.toUpperCase()}]: ${n.content}`).join('\n')}
     timestamp: new Date().toLocaleTimeString()
   };
 
-  const { text } = await callGeminiAPI([synthNode], selectedModel, customApiKey);
+  const { text } = await callGeminiAPI([synthNode], selectedModel, customApiKey, demoMode);
   return text;
 }
 

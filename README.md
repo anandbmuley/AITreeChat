@@ -149,9 +149,9 @@ Based on the calculated complexity score ($C$), AITreeChat automatically suggest
 
 | Complexity Tier          | Score Range      | Recommended Model    | Best Suited For                                                                    |
 | :----------------------- | :--------------- | :------------------- | :--------------------------------------------------------------------------------- |
-| 🟢 **Low Complexity**    | $C < 8$          | **Gemini 2.0 Flash** | Quick Q&A, simple follow-up prompts, single-turn replies                           |
+| 🟢 **Low Complexity**    | $C < 8$          | **Gemini 2.5 Flash-Lite** | Quick Q&A, simple follow-up prompts, single-turn replies                           |
 | 🟡 **Medium Complexity** | $8 \le C \le 18$ | **Gemini 2.5 Flash** | Standard technical threads, moderate code analysis                                 |
-| 🔴 **High Complexity**   | $C > 18$         | **Gemini 1.5 Pro**   | Deep ancestral paths ($6+$ nodes), complex multi-branch forks, intensive reasoning |
+| 🔴 **High Complexity**   | $C > 18$         | **Gemini 2.5 Pro**   | Deep ancestral paths ($6+$ nodes), complex multi-branch forks, intensive reasoning |
 
 > **Why Route Dynamically?** Basic follow-up questions don't require high-tier model costs. Dynamic node routing ensures token efficiency, lower latency, and full control over AI interactions.
 

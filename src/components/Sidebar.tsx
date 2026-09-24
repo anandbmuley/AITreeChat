@@ -24,6 +24,8 @@ interface SidebarProps {
   setSelectedModel: (modelId: string) => void;
   apiKey: string;
   setApiKey: (key: string) => void;
+  demoMode: boolean;
+  setDemoMode: (enabled: boolean) => void;
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
   nodeCount: number;
@@ -43,6 +45,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setSelectedModel,
   apiKey,
   setApiKey,
+  demoMode,
+  setDemoMode,
   themeMode,
   setThemeMode,
   nodeCount,
@@ -187,6 +191,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
+          <button
+            role="switch"
+            aria-checked={demoMode}
+            onClick={() => setDemoMode(!demoMode)}
+            className="w-full flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300"
+            title="Demo mode returns canned responses without calling the LLM"
+          >
+            <span className="font-medium">Demo Mode</span>
+            <span
+              className={`relative inline-flex h-4 w-7 items-center rounded-full transition ${
+                demoMode ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${
+                  demoMode ? 'translate-x-3.5' : 'translate-x-0.5'
+                }`}
+              />
+            </span>
+          </button>
+
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
@@ -205,11 +230,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Paste Gemini API Key..."
+                placeholder="Paste Vertex AI API Key..."
                 className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 outline-none transition"
               />
               <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
-                Leave empty for built-in simulation mode.
+                Vertex AI express-mode key (starts with AQ.).
               </p>
             </div>
           )}

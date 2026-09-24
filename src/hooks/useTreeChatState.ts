@@ -67,6 +67,8 @@ export function useTreeChatState() {
   const [activeThreadNodeId, setActiveThreadNodeId] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string>(AVAILABLE_MODELS[0].id);
   const [apiKey, setApiKey] = useState<string>('');
+  // Demo mode defaults on only when no key is available from the environment.
+  const [demoMode, setDemoMode] = useState<boolean>(!import.meta.env.VITE_GEMINI_API_KEY);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [inspectedNodeId, setInspectedNodeId] = useState<string | null>(null);
@@ -232,7 +234,7 @@ export function useTreeChatState() {
 
     try {
       const historyPath = parentId ? [...getPathToRoot(parentId), userNode] : [userNode];
-      const aiResponse = await callGeminiAPI(historyPath, targetModel, apiKey);
+      const aiResponse = await callGeminiAPI(historyPath, targetModel, apiKey, demoMode);
 
       const aiNodeId = `node-${Date.now() + 1}`;
       const aiNode: ChatNode = {
@@ -292,7 +294,7 @@ export function useTreeChatState() {
 
     try {
       const fullHistoryPath = [...parentPath, userNode];
-      const aiResponse = await callGeminiAPI(fullHistoryPath, targetModel, apiKey);
+      const aiResponse = await callGeminiAPI(fullHistoryPath, targetModel, apiKey, demoMode);
 
       const aiNodeId = `node-${Date.now() + 1}`;
       const aiNode: ChatNode = {
@@ -378,6 +380,8 @@ export function useTreeChatState() {
     activeThreadNodeId,
     selectedModel,
     apiKey,
+    demoMode,
+    setDemoMode,
     isLoading,
     apiError,
     setApiError,
