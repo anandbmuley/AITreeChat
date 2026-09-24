@@ -17,6 +17,8 @@ export default function App() {
     activeThreadNodeId,
     selectedModel,
     apiKey,
+    demoMode,
+    setDemoMode,
     isLoading,
     apiError,
     setApiError,
@@ -58,6 +60,8 @@ export default function App() {
         setSelectedModel={setSelectedModel}
         apiKey={apiKey}
         setApiKey={setApiKey}
+        demoMode={demoMode}
+        setDemoMode={setDemoMode}
         nodeCount={nodeCount}
         rootCount={rootIds.length}
         activeThreadDepth={activeThreadPath.length}
@@ -143,6 +147,7 @@ export default function App() {
           nodes={nodes}
           selectedModel={selectedModel}
           apiKey={apiKey}
+          demoMode={demoMode}
           getPathToRoot={getPathToRoot}
           onClose={() => setShowSynthesisModal(false)}
         />
