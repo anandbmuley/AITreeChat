@@ -117,11 +117,7 @@ export async function callGeminiAPI(
   };
 
   if (apiKey.trim()) {
-    // Vertex AI express-mode keys ("AQ.…") use the Vertex endpoint; AI Studio keys ("AIza…") use the Gemini Developer API.
-    const isVertexKey = apiKey.startsWith('AQ.');
-    const endpoint = isVertexKey
-      ? `https://aiplatform.googleapis.com/v1/publishers/google/models/${selectedModel}:generateContent?key=${encodeURIComponent(apiKey)}`
-      : `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent`;
+    const endpoint = `https://aiplatform.googleapis.com/v1/publishers/google/models/${selectedModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
     let delay = 1000;
     let lastError: Error | null = null;
@@ -130,9 +126,7 @@ export async function callGeminiAPI(
       try {
         const response = await fetch(endpoint, {
           method: 'POST',
-          headers: isVertexKey
-            ? { 'Content-Type': 'application/json' }
-            : { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
