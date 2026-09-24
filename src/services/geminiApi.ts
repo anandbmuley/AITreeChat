@@ -1,4 +1,4 @@
-import { ChatNode, ModelOption, TreeComplexityMetrics } from '../types/chat';
+import { ChatNode, ModelOption, TokenUsage, TreeComplexityMetrics } from '../types/chat';
 
 export const AVAILABLE_MODELS: ModelOption[] = [
   {
@@ -30,16 +30,33 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   }
 ];
 
+export interface GeminiResult {
+  text: string;
+  /** Absent in simulation mode, where no API call is made. */
+  usage?: TokenUsage;
+}
+
+/**
+ * Tokens consumed by a path, taken from the API-reported usage on its most recent
+ * assistant node (prompt + completion covers the whole path up to that reply).
+ */
+export function getPathTokenCount(historyPath: ChatNode[]): number {
+  for (let i = historyPath.length - 1; i >= 0; i--) {
+    const usage = historyPath[i].metadata?.usage;
+    if (usage) return usage.totalTokens;
+  }
+  return 0;
+}
+
 export function calculatePathComplexity(
   historyPath: ChatNode[],
   branchCount: number = 0
 ): TreeComplexityMetrics {
   const depth = historyPath.length;
-  const totalChars = historyPath.reduce((sum, node) => sum + node.content.length, 0);
-  const estimatedTokens = Math.max(1, Math.ceil(totalChars / 4));
+  const totalTokens = getPathTokenCount(historyPath);
 
   const depthScore = depth * 1.5;
-  const tokenScore = estimatedTokens / 200;
+  const tokenScore = totalTokens / 200;
   const branchScore = branchCount * 2.0;
 
   const rawScore = depthScore + tokenScore + branchScore;
@@ -52,15 +69,15 @@ export function calculatePathComplexity(
   if (score < 8) {
     tier = 'low';
     recommendedModelId = 'gemini-2.0-flash';
-    reason = `Low complexity (Depth ${depth}, ~${estimatedTokens} tokens). Gemini 2.0 Flash recommended for instant responses.`;
+    reason = `Low complexity (Depth ${depth}, ${totalTokens} tokens). Gemini 2.0 Flash recommended for instant responses.`;
   } else if (score <= 18) {
     tier = 'medium';
     recommendedModelId = 'gemini-2.5-flash';
-    reason = `Medium complexity (Depth ${depth}, ~${estimatedTokens} tokens). Gemini 2.5 Flash recommended for balanced intelligence.`;
+    reason = `Medium complexity (Depth ${depth}, ${totalTokens} tokens). Gemini 2.5 Flash recommended for balanced intelligence.`;
   } else {
     tier = 'high';
     recommendedModelId = 'gemini-1.5-pro';
-    reason = `High complexity (Depth ${depth}, ~${estimatedTokens} tokens, ${branchCount} branches). Gemini 1.5 Pro recommended for deep context reasoning.`;
+    reason = `High complexity (Depth ${depth}, ${totalTokens} tokens, ${branchCount} branches). Gemini 1.5 Pro recommended for deep context reasoning.`;
   }
 
   return {
@@ -68,7 +85,7 @@ export function calculatePathComplexity(
     tier,
     recommendedModelId,
     depth,
-    estimatedTokens,
+    totalTokens,
     branchCount,
     reason
   };
@@ -79,7 +96,7 @@ export async function callGeminiAPI(
   historyPath: ChatNode[],
   selectedModel: string = 'gemini-2.5-flash',
   customApiKey?: string
-): Promise<string> {
+): Promise<GeminiResult> {
   const apiKey = customApiKey || import.meta.env.VITE_GEMINI_API_KEY || '';
 
   // Standardize message roles for Gemini REST API
@@ -116,7 +133,21 @@ export async function callGeminiAPI(
         if (response.ok) {
           const data = await response.json();
           const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (generatedText) return generatedText;
+          if (generatedText) {
+            const meta = data.usageMetadata;
+            const promptTokens = meta?.promptTokenCount ?? 0;
+            const completionTokens = meta?.candidatesTokenCount ?? 0;
+            return {
+              text: generatedText,
+              usage: meta
+                ? {
+                    promptTokens,
+                    completionTokens,
+                    totalTokens: meta.totalTokenCount ?? promptTokens + completionTokens
+                  }
+                : undefined
+            };
+          }
           throw new Error("No text content returned from Gemini API response.");
         } else {
           // Parse standard Gemini API error format
@@ -160,7 +191,7 @@ export async function callGeminiAPI(
 
   // Simulation mode fallback generator when API key is unconfigured
   const lastUserPrompt = historyPath[historyPath.length - 1]?.content || 'Unknown prompt';
-  return generateSimulationResponse(lastUserPrompt, historyPath.length);
+  return { text: generateSimulationResponse(lastUserPrompt, historyPath.length) };
 }
 
 export async function synthesizeBranches(
@@ -192,7 +223,8 @@ ${pathB.map(n => `[${n.role.toUpperCase()}]: ${n.content}`).join('\n')}
     timestamp: new Date().toLocaleTimeString()
   };
 
-  return callGeminiAPI([synthNode], selectedModel, customApiKey);
+  const { text } = await callGeminiAPI([synthNode], selectedModel, customApiKey);
+  return text;
 }
 
 function generateSimulationResponse(userPrompt: string, contextLength: number): string {

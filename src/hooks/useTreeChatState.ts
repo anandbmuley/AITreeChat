@@ -232,7 +232,7 @@ export function useTreeChatState() {
 
     try {
       const historyPath = parentId ? [...getPathToRoot(parentId), userNode] : [userNode];
-      const aiResponseContent = await callGeminiAPI(historyPath, targetModel, apiKey);
+      const aiResponse = await callGeminiAPI(historyPath, targetModel, apiKey);
 
       const aiNodeId = `node-${Date.now() + 1}`;
       const aiNode: ChatNode = {
@@ -240,9 +240,9 @@ export function useTreeChatState() {
         parentId: userNodeId,
         childrenIds: [],
         role: 'assistant',
-        content: aiResponseContent,
+        content: aiResponse.text,
         timestamp: getTimestamp(),
-        metadata: { model: targetModel, isMain: true }
+        metadata: { model: targetModel, isMain: true, usage: aiResponse.usage }
       };
 
       setNodes(prev => ({
@@ -292,7 +292,7 @@ export function useTreeChatState() {
 
     try {
       const fullHistoryPath = [...parentPath, userNode];
-      const aiResponseContent = await callGeminiAPI(fullHistoryPath, targetModel, apiKey);
+      const aiResponse = await callGeminiAPI(fullHistoryPath, targetModel, apiKey);
 
       const aiNodeId = `node-${Date.now() + 1}`;
       const aiNode: ChatNode = {
@@ -300,9 +300,9 @@ export function useTreeChatState() {
         parentId: userNodeId,
         childrenIds: [],
         role: 'assistant',
-        content: aiResponseContent,
+        content: aiResponse.text,
         timestamp: getTimestamp(),
-        metadata: { model: targetModel }
+        metadata: { model: targetModel, usage: aiResponse.usage }
       };
 
       setNodes(prev => ({

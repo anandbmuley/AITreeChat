@@ -121,7 +121,7 @@ interface ChatNode {
   timestamp: string;
   metadata?: {
     model?: string;
-    tokens?: number;
+    usage?: { promptTokens: number; completionTokens: number; totalTokens: number }; // from Gemini usageMetadata
     forkTitle?: string;
   };
 }
