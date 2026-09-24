@@ -139,8 +139,9 @@ export async function callGeminiAPI(
     .replace(/^['"]|['"]$/g, "");
 
   // Standardize message roles for the Gemini Interactions REST API
-  const turns = historyPath.map((item) => ({
-    role: item.role === "assistant" ? "model" : "user",
+  // Steps-based API revision: input is a step_list, not a turn_list.
+  const steps = historyPath.map((item) => ({
+    type: item.role === "assistant" ? "model_output" : "user_input",
     content: [{ type: "text", text: item.content }],
   }));
 
@@ -164,7 +165,7 @@ export async function callGeminiAPI(
         },
         body: JSON.stringify({
           model: selectedModel,
-          input: turns,
+          input: steps,
           system_instruction: SYSTEM_INSTRUCTION,
         }),
       });
@@ -174,7 +175,14 @@ export async function callGeminiAPI(
       }
 
       const data = await response.json();
-      const generatedText: string = (data.outputs ?? [])
+      // Steps-based responses nest text under model_output steps' content;
+      // fall back to a flat `outputs` list for older revisions.
+      const parts: any[] = data.steps
+        ? data.steps
+            .filter((st: any) => st.type === "model_output")
+            .flatMap((st: any) => st.content ?? [])
+        : (data.outputs ?? []);
+      const generatedText: string = parts
         .filter((o: any) => o.type === "text" && o.text)
         .map((o: any) => o.text)
         .join("");
